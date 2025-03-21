@@ -2,26 +2,21 @@ version: "3.8"
 
 services:
   backend:
-    build: src
+    build: .
     ports:
-      - "3000:3000"
+      - "${PORT}:8080"
+    env_file:
+      - .env
     depends_on:
       - db
-    environment:
-      - DB_HOST=db
-      - DB_USER=admin
-      - DB_PASSWORD=password
-      - DB_NAME=personal_cloud
 
   db:
     image: postgres:15
     restart: always
     ports:
       - "5432:5432"
-    environment:
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: personal_cloud
+    env_file:
+      - .env
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
