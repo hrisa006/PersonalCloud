@@ -2,7 +2,7 @@
 
 # npm
 node_modules
-.envnpm install --save-dev nodemon
+.env
 package-lock.json
 npm-shrinkwrap.json
 *.log
