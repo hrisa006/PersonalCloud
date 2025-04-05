@@ -8,6 +8,6 @@ RUN npm install
 
 COPY .. .
 
-EXPOSE 8080
+EXPOSE 8081
 
 CMD ["npx", "ts-node-dev", "--respawn", "--transpile-only", "src/server/server.ts"]
