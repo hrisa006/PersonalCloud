@@ -1,0 +1,18 @@
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "${API_PORT}:${API_PORT}"
+    env_file:
+      - ./backend/.env
+
+  frontend:
+    build: ./frontend
+    links:
+      - backend
+    ports:
+      - "${WEB_PORT}:${WEB_PORT}"
+    env_file:
+      - ./frontend/.env
+    depends_on:
+      - backend

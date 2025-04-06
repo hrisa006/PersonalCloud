@@ -1,10 +1,8 @@
-version: "3.8"
-
 services:
   backend:
     build: .
     ports:
-      - "${PORT}:8080"
+      - "${API_PORT}:${API_PORT}"
     env_file:
       - .env
     depends_on:
@@ -14,7 +12,7 @@ services:
     image: postgres:15
     restart: always
     ports:
-      - "5432:5432"
+      - "${DB_PORT}:${DB_PORT}"
     env_file:
       - .env
     volumes:
