@@ -1,8 +1,14 @@
 import { Router } from 'express';
 import { fileUpload } from '../controller/file-controller';
+import { fileGet } from '../controller/file-controller';
+import { fileUpdate } from '../controller/file-controller';
+import { fileRemove } from '../controller/file-controller';
 
 const fileRouter = Router();
 
-fileRouter.post('/upload', fileUpload);
+fileRouter.post('/', fileUpload);
+fileRouter.get('/', fileGet);
+fileRouter.delete('/', fileRemove);
+fileRouter.put('/', fileUpdate);
 
 export default fileRouter;
