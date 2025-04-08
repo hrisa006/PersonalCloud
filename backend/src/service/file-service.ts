@@ -8,6 +8,7 @@ const STORAGE_DIR = 'uploads';
 const FINISH = 'finish';
 const FILE = 'file';
 const FIELD = 'field';
+const CLOSE = 'close';
 
 export default class fileService {
     public fileUpload(req: Request, res: Response) {
@@ -16,6 +17,9 @@ export default class fileService {
         let filePath = '';
         bb.on(FIELD, (fieldname: string, value: string) => filePath = this.processField(fieldname, filePath, value));
 
+        if (this.validatePath(filePath))
+            res.status(400).send('Error parsing the file')
+
         bb.on(FILE, (fieldname: string, file: NodeJS.ReadableStream, filename: FileName) =>
             this.processFile(filename, res, filePath, file));
 
@@ -23,23 +27,26 @@ export default class fileService {
         req.pipe(bb);
     }
 
-
     public removeFile(req: Request, res: Response) {
-        this.removeFileWithError(req, res, (err) => {
-            if (err) {
-                console.error('Delete error:', err);
-                return res.status(500).send('There was an error deleting the file');
-            }
-            res.status(200).send('File deleted successfully');
-        });
+       try {
+            this.removeFileWithError(req, res, (err) => {
+                if (err) {
+                    console.error('Delete error:', err);
+                    return res.status(500).send('There was an error deleting the file');
+                }
+                res.status(200).send('File deleted successfully');
+            });
+        } catch(err: any) {
+            return res.status(400).send('There was an error parsing the file');
+        }
     }
 
     public getFile(req: Request, res: Response) {
         const reqFilePath = req.query.filePath as string;
         const internalFilePath = path.join(this.getRootPath(), STORAGE_DIR, reqFilePath);
-        //Add validation so other system files are not accessible only the storage dir
-        if (!fs.existsSync(internalFilePath)) {
-            res.status(400).send('There was an error parsing the file');
+
+        if (!fs.existsSync(internalFilePath) || this.validatePath(internalFilePath)) {
+            return res.status(400).send('There was an error parsing the file');
         }
 
         res.download(internalFilePath, internalFilePath.substring(internalFilePath.indexOf('/')), (err) => {
@@ -51,18 +58,17 @@ export default class fileService {
     }
 
     public updateFile(req: Request, res: Response) {
-        const reqFilePath = req.query.filePath as string;
-        const internalFilePath = path.join(this.getRootPath(), STORAGE_DIR, reqFilePath);
-        //Add validation so other system files are not accessible only the storage dir
-        if (!fs.existsSync(internalFilePath)) {
-            res.status(400).send('There was an error parsing the file');
+        try {
+            this.removeFileWithError(req, res, (err) => {
+                if (err) {
+                    console.error('Delete error:', err);
+                    return res.status(500).send('There was an error deleting the file');
+                }
+            });
+        } catch(err: any) {
+            return res.status(400).send('There was an error parsing the file');
         }
-        this.removeFileWithError(req, res, (err) => {
-            if (err) {
-                console.error('Delete error:', err);
-                return res.status(500).send('There was an error deleting the file');
-            }
-        });
+
         this.fileUpload(req, res);
     }
 
@@ -94,11 +100,10 @@ export default class fileService {
         const writeStream = fs.createWriteStream(fileToSave);
 
         file.pipe(writeStream);
-        writeStream.on('close', () => console.log(`Finished writing ${filename.filename}`));
+        writeStream.on(CLOSE, () => console.log(`Finished writing ${filename.filename}`));
     }
 
     private processField(fieldname: string, filePath: string, value: string) {
-        //add path validations
         if (fieldname === 'filePath')
             filePath = value;
 
@@ -108,14 +113,15 @@ export default class fileService {
     private removeFileWithError(req: Request, res: Response, onError: (err: any) => void) {
         const reqFilePath = req.query.filePath as string;
         const internalFilePath = path.join(this.getRootPath(), STORAGE_DIR, reqFilePath);
-        //Add validation so other system files are not accessible only the storage dir
-        if (!fs.existsSync(internalFilePath)) {
-            res.status(400).send('There was an error parsing the file');
+
+        if (!fs.existsSync(internalFilePath) || this.validatePath(internalFilePath)) {
+            throw Error("Error processing file");
         }
+        //rm if dir is empty
         fs.rm(internalFilePath, onError);
     }
 
-    private validatePath(path: string): boolean {
-        return true;
+    private validatePath(filePath: string): boolean {
+        return !(filePath.includes('..') || filePath.includes('/') || filePath.includes('\\'))
     }
 }
