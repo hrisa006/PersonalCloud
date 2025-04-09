@@ -10,15 +10,16 @@ const FILE = 'file';
 const FIELD = 'field';
 const CLOSE = 'close';
 
-export default class fileService {
+export default class FileService {
     public fileUpload(req: Request, res: Response) {
         const bb = busboy({headers: req.headers});
 
         let filePath = '';
-        bb.on(FIELD, (fieldname: string, value: string) => filePath = this.processField(fieldname, filePath, value));
-
-        if (this.validatePath(filePath))
-            res.status(400).send('Error parsing the file')
+        bb.on(FIELD, (fieldname: string, value: string) => {
+            if (this.validatePath(filePath))
+                return res.status(400).send('Error parsing the file')
+            filePath = this.processField(fieldname, filePath, value)
+        });
 
         bb.on(FILE, (fieldname: string, file: NodeJS.ReadableStream, filename: FileName) =>
             this.processFile(filename, res, filePath, file));
