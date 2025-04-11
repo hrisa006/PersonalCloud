@@ -63,9 +63,7 @@ export default class FileService {
 
         bb.on(FINISH, () =>
             res.status(200).json({message: 'Upload complete', path: filePathResponse,
-                fileType: filePathResponse.substring(filePathResponse.indexOf('.')),
-                createdAt: new Date(), updatedAt: new Date()
-            })
+                fileType: path.extname(filePathResponse), createdAt: new Date(), updatedAt: new Date()})
         );
 
         req.pipe(bb);
