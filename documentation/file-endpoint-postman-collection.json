@@ -1,0 +1,157 @@
+{
+	"info": {
+		"_postman_id": "fa98c656-1850-4b88-a472-54c98b103af6",
+		"name": "PersonalCloud",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "17214294"
+	},
+	"item": [
+		{
+			"name": "Upload File",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "file",
+							"type": "file",
+							"src": "/Users/veselin/Documents/FMI/xml/1.xml"
+						}
+					]
+				},
+				"url": {
+					"raw": "http://localhost:8081/file?filePath=my/file/dir",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8081",
+					"path": [
+						"file"
+					],
+					"query": [
+						{
+							"key": "filePath",
+							"value": "my/file/dir"
+						}
+					]
+				},
+				"description": "Generated from cURL: curl -X POST http://localhost:3000/upload \\\n  -H \"Content-Type: multipart/form-data\" \\\n  -F \"file=@/full/path/to/your/file.jpg\""
+			},
+			"response": []
+		},
+		{
+			"name": "Update File",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "file",
+							"type": "file",
+							"src": "postman-cloud:///1f01572f-dd19-4030-b3a1-e1041733bc88"
+						}
+					]
+				},
+				"url": {
+					"raw": "http://localhost:8081/file?filePath=my/file/dir/1.xml",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8081",
+					"path": [
+						"file"
+					],
+					"query": [
+						{
+							"key": "filePath",
+							"value": "my/file/dir/1.xml"
+						}
+					]
+				},
+				"description": "Generated from cURL: curl -X POST http://localhost:3000/upload \\\n  -H \"Content-Type: multipart/form-data\" \\\n  -F \"file=@/full/path/to/your/file.jpg\""
+			},
+			"response": []
+		},
+		{
+			"name": "Upload File Copy",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "file",
+							"type": "file",
+							"src": "/full/path/to/your/file.jpg"
+						}
+					]
+				},
+				"url": {
+					"raw": "http://localhost:8081/file?filePath=my/file/dir/2.xml",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8081",
+					"path": [
+						"file"
+					],
+					"query": [
+						{
+							"key": "filePath",
+							"value": "my/file/dir/2.xml"
+						}
+					]
+				},
+				"description": "Generated from cURL: curl -X POST http://localhost:3000/upload \\\n  -H \"Content-Type: multipart/form-data\" \\\n  -F \"file=@/full/path/to/your/file.jpg\""
+			},
+			"response": []
+		},
+		{
+			"name": "Upload File Copy 2",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "file",
+							"type": "file",
+							"src": "/full/path/to/your/file.jpg"
+						}
+					]
+				},
+				"url": {
+					"raw": "http://localhost:8081/file?filePath=my/file/dir/2.xml",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8081",
+					"path": [
+						"file"
+					],
+					"query": [
+						{
+							"key": "filePath",
+							"value": "my/file/dir/2.xml"
+						}
+					]
+				},
+				"description": "Generated from cURL: curl -X POST http://localhost:3000/upload \\\n  -H \"Content-Type: multipart/form-data\" \\\n  -F \"file=@/full/path/to/your/file.jpg\""
+			},
+			"response": []
+		}
+	]
+}

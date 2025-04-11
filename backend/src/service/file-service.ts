@@ -32,7 +32,10 @@ export default class FileService {
         const reqFilePath = req.query.filePath as string ?? '';
         const internalFilePath = path.join(this.getRootPath(), STORAGE_DIR, reqFilePath);
 
-        if (!fs.existsSync(internalFilePath) || !this.validatePath(reqFilePath))
+        if (!fs.existsSync(internalFilePath))
+            throw new BadRequestError('File does not exist');
+
+        if (!this.validatePath(reqFilePath))
             throw new BadRequestError('There was an error parsing the file');
 
          res.download(internalFilePath, path.basename(internalFilePath), (err) => {
@@ -84,8 +87,12 @@ export default class FileService {
         const reqFilePath = req.query.filePath as string ?? '';
         const internalFilePath = path.join(this.getRootPath(), STORAGE_DIR, reqFilePath);
 
-        if (!fs.existsSync(internalFilePath) || !this.validatePath(internalFilePath))
+        if (!fs.existsSync(internalFilePath))
+            throw new BadRequestError('File does not exist');
+
+        if (!this.validatePath(reqFilePath))
             throw new BadRequestError('There was an error deleting the file');
+
 
         fs.rm(internalFilePath, onError);
     }
