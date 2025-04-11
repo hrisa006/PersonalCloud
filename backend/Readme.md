@@ -74,11 +74,11 @@ See running containers:
 
 Stop all containers:
 
-    docker-compose down
+    docker compose down
 
 Rebuild and restart everything:
 
-    docker-compose up --build
+    docker compose up --build
 
 Access PostgreSQL from terminal:
 
