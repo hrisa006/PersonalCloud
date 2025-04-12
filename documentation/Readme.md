@@ -10,7 +10,7 @@ This project includes both frontend and backend services, each containerized wit
 
 ---
 
-## 📦 Requirements
+##  Requirements
 
 - [Docker](https://www.docker.com/)
 - [Docker Compose](https://docs.docker.com/compose/)
@@ -18,7 +18,7 @@ This project includes both frontend and backend services, each containerized wit
 
 ---
 
-## 🚀 Quick Start
+##  Quick Start
 
 1. **Clone the repository**  
    Navigate to the root directory.
@@ -49,7 +49,7 @@ This will:
 
 ---
 
-## 🧩 Docker Compose Overview
+## Docker Compose Overview
 
 ### `backend` service
 
@@ -66,25 +66,7 @@ This will:
 
 ---
 
-## 🧪 Sample Tests
-
-### API Test (Backend)
-
-```bash
-curl http://localhost:8081/api/test
-```
-
-### Frontend Test
-
-Open your browser and go to:
-
-```
-http://localhost:5173
-```
-
----
-
-## 🛠 Common Docker Commands
+##  Common Docker Commands
 
 **See running containers:**
 
