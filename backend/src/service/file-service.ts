@@ -58,6 +58,40 @@ export default class FileService {
         });
     }
 
+    public searchFilesByName(req: Request): string[] {
+        const fileName = req.query.fileName as string;
+        
+        if (!fileName || fileName.trim() === '')
+            throw new BadRequestError('File name is required');
+            
+        if (!this.validatePath(fileName))
+            throw new BadRequestError('Invalid file name');
+            
+        const rootStoragePath = path.join(this.getRootPath(), STORAGE_DIR);
+        const results: string[] = [];
+        
+        const searchDirectory = (dirPath: string) => {
+            if (!fs.existsSync(dirPath)) return;
+            
+            const items = fs.readdirSync(dirPath);
+            
+            for (const item of items) {
+                const fullPath = path.join(dirPath, item);
+                const stats = fs.statSync(fullPath);
+                
+                if (stats.isDirectory()) {
+                    searchDirectory(fullPath);
+                } else if (item.toLowerCase().includes(fileName.toLowerCase())) {
+                    const relativePath = path.relative(rootStoragePath, fullPath);
+                    results.push(relativePath);
+                }
+            }
+        };
+        
+        searchDirectory(rootStoragePath);
+        return results;
+    }
+
     private handleBusboyFileUpload(filePath: string, req: Request): Promise<FileUploadResponseDto> {
         return new Promise((resolve, reject) => {
             const bb = busboy({ headers: req.headers });
@@ -78,7 +112,6 @@ export default class FileService {
             req.pipe(bb);
         });
     }
-
 
     private processFile(filename: FileName, fileToSave: string, file: NodeJS.ReadableStream) {
         if (!filename)

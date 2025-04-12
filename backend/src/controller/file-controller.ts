@@ -41,3 +41,15 @@ export const fileGet = (req: Request, res: Response, next: NextFunction) => {
         return next(err);
     }
 };
+
+export const searchFiles = (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const files = fileService.searchFilesByName(req);
+        return res.status(200).json({
+            message: files.length > 0 ? `Found ${files.length} files` : 'No files found',
+            files: files
+        });
+    } catch (err) {
+        return next(err);
+    }
+};
