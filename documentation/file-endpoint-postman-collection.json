@@ -79,7 +79,7 @@
 			"response": []
 		},
 		{
-			"name": "Upload File Copy",
+			"name": "Get File",
 			"protocolProfileBehavior": {
 				"disableBodyPruning": true
 			},
@@ -118,7 +118,7 @@
 			"response": []
 		},
 		{
-			"name": "Upload File Copy 2",
+			"name": "Remove File",
 			"request": {
 				"method": "DELETE",
 				"header": [],

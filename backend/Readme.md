@@ -38,34 +38,6 @@ This will:
 Access your API at: http://localhost:8081
 ---
 
-## Docker Compose Overview
-
-backend service
-- Uses Dockerfile to build your Node.js + TypeScript server
-- Port: 8081 (exposed locally)
-
-db service
-- Uses postgres:15 image
-- Environment:
-    - POSTGRES_USER=admin
-    - POSTGRES_PASSWORD: password
-     - POSTGRES_DB: personal_cloud
-- Port: 5432 (accessible to backend)
-
----
-
-## Environment Variables (in docker-compose.yml)
-
-| Variable    | Value          |
-|-------------|----------------|
-| DB_HOST     | db             |
-| DB_PORT     | 5432           |
-| DB_USER     | admin          |
-| DB_PASSWORD | password       |
-| DB_NAME     | personal_cloud |
-
----
-
 ## Common Docker Commands
 
 See running containers:
@@ -84,13 +56,61 @@ Access PostgreSQL from terminal:
 
     docker exec -it personal-cloud-backend-db-1 psql -U admin -d mydb
 
-Tip: Run `docker ps` to check the actual container name.
+---
+
+## API
+
+### File endpoint - [Postman Collection](../documentation/file-endpoint-postman-collection.json)
+
+| Endpoint    | HTTP Verb  | Description                                          |
+|-------------|------------|------------------------------------------------------|
+| **`/file`** | **POST**   | Uploads a new file.                                  |
+| **`/file`** | **PUT**    | Updates an existing file (removes old, uploads new). |
+| **`/file`** | **DELETE** | Removes a file from the server.                      |
+| **`/file`** | **GET**    | Downloads a file.                                    |
 
 ---
 
-## Sample API Test with cURL
+#### 1. POST `/file?filePath=<some/path>`
 
-Test GET /api/test:
-    curl http://localhost:8081/api/test
+- **Description**: Uploads a file (or files) to the server at the specified `filePath` (optional).
+- **Body**: Must be `multipart/form-data`; include one file field (e.g., `file`).
 
+---
+
+#### 2. PUT `/file?filePath=<some/path/file.ext>`
+
+- **Description**: Removes the existing file at `filePath` and uploads a new file in its place.
+- **Body**: Must be `multipart/form-data`; include at least one file field (e.g., `file`).
+
+---
+
+#### 3. DELETE `/file?filePath=<some/path/file.ext>`
+
+- **Description**: Deletes a file at the specified `filePath`.
+
+---
+
+#### 4. GET `/file?filePath=<some/path/file.ext>`
+
+- **Description**: Initiates a download of the file located at `filePath`.
+- **Response**: Returns the raw file as the response body.
+
+---
+
+#### Errors
+
+These errors are triggered by issues with the client’s request. For example:
+- **Invalid File Path**: The provided `filePath` contains illegal characters (e.g., `..` or backslashes).
+- **File Not Found**: The specified file does not exist on the server.
+- **Parsing Errors**: Issues parsing the file during upload or update, such as missing or malformed file data.
+- **Server Errors**: System related failures
+
+#### Example Response
+```json
+{
+  "status": 400,
+  "message": "Invalid file path"
+}
+```
 ---

@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { Request, Response } from 'express';
+import { Request } from 'express';
 import busboy from 'busboy';
 import {BadRequestError} from "../errors/bad-request-error";
 
@@ -9,26 +9,19 @@ const STORAGE_DIR = 'uploads';
 const FINISH = 'finish';
 const FILE = 'file';
 const CLOSE = 'close';
+const ERROR = 'error';
 
 export default class FileService {
-    public fileUpload(req: Request, res: Response) {
+    public fileUpload(req: Request): Promise<any> {
         const reqFilePath = req.query.filePath as string ?? '';
 
         if (!this.validatePath(reqFilePath))
             throw new BadRequestError('Invalid file path');
 
-        this.handleBusboyFileUpload(reqFilePath, res, req);
+        return this.handleBusboyFileUpload(reqFilePath, req);
     }
 
-    public removeFile(req: Request, res: Response) {
-        this.removeFileWithError(req, (err) => {
-            if (err)
-                throw Error(err.message);
-            res.status(200).send('File deleted successfully');
-        });
-    }
-
-    public getFile(req: Request, res: Response) {
+    public getFilePath(req: Request): string {
         const reqFilePath = req.query.filePath as string ?? '';
         const internalFilePath = path.join(this.getRootPath(), STORAGE_DIR, reqFilePath);
 
@@ -38,39 +31,54 @@ export default class FileService {
         if (!this.validatePath(reqFilePath))
             throw new BadRequestError('There was an error parsing the file');
 
-         res.download(internalFilePath, path.basename(internalFilePath), (err) => {
-            if (err)
-                throw Error(err.message);
-        });
+        return internalFilePath;
     }
 
-    public updateFile(req: Request, res: Response) {
+    public updateFile(req: Request): Promise<any> {
         let reqFilePath = req.query.filePath as string ?? '';
         if (!this.validatePath(reqFilePath))
             throw new BadRequestError('There was an error parsing the file');
 
-        this.handleBusboyFileUpload(path.dirname(reqFilePath), res, req);
-        this.removeFileWithError(req, (err) => {
-            if (err)
-                throw Error(err);
+        this.removeFile(req);
+        return this.handleBusboyFileUpload(path.dirname(reqFilePath), req);
+    }
+
+    public removeFile(req: Request): void {
+        const reqFilePath = req.query.filePath as string ?? '';
+        const internalFilePath = path.join(this.getRootPath(), STORAGE_DIR, reqFilePath);
+
+        if (!fs.existsSync(internalFilePath))
+            throw new BadRequestError('File does not exist');
+
+        if (!this.validatePath(reqFilePath))
+            throw new BadRequestError('There was an error deleting the file');
+
+        fs.rm(internalFilePath, (err) => {
+            if (err) throw Error(err.message);
         });
     }
 
-    private handleBusboyFileUpload(filePath: string, res: Response, req: Request) {
-        const bb = busboy({ headers: req.headers });
-        let filePathResponse = '';
-        bb.on(FILE, (fieldname: string, file: NodeJS.ReadableStream, filename: FileName) => {
-            this.processFile(filename, path.join(this.getUploadPath(filePath), filename.filename), file);
-            filePathResponse = path.join(filePath, filename.filename)
+    private handleBusboyFileUpload(filePath: string, req: Request): Promise<any> {
+        return new Promise((resolve, reject) => {
+            const bb = busboy({ headers: req.headers });
+            let filePathResponse = '';
+
+            bb.on(FILE, (fieldname: string, file: NodeJS.ReadableStream, filename: FileName) => {
+                const savedFile = path.join(this.getUploadPath(filePath), filename.filename);
+                filePathResponse = path.join(filePath, filename.filename);
+                this.processFile(filename, savedFile, file);
+            });
+
+            bb.on(FINISH, () => resolve({
+                    message: 'Upload complete', path: filePathResponse, fileType: path.extname(filePathResponse),
+                    createdAt: new Date(), updatedAt: new Date()}));
+
+            bb.on(ERROR, (err: any) => reject(new BadRequestError(err.message || 'Error in file upload')));
+
+            req.pipe(bb);
         });
-
-        bb.on(FINISH, () =>
-            res.status(200).json({message: 'Upload complete', path: filePathResponse,
-                fileType: path.extname(filePathResponse), createdAt: new Date(), updatedAt: new Date()})
-        );
-
-        req.pipe(bb);
     }
+
 
     private processFile(filename: FileName, fileToSave: string, file: NodeJS.ReadableStream) {
         if (!filename)
@@ -83,25 +91,10 @@ export default class FileService {
     }
 
 
-    private removeFileWithError(req: Request, onError: (err: any) => void) {
-        const reqFilePath = req.query.filePath as string ?? '';
-        const internalFilePath = path.join(this.getRootPath(), STORAGE_DIR, reqFilePath);
-
-        if (!fs.existsSync(internalFilePath))
-            throw new BadRequestError('File does not exist');
-
-        if (!this.validatePath(reqFilePath))
-            throw new BadRequestError('There was an error deleting the file');
-
-
-        fs.rm(internalFilePath, onError);
-    }
-
     private getRootPath(): string {
         let result = __dirname;
         for (let i = 0; i < DIR_BACK_LEVELS; i++)
             result = path.dirname(result);
-
         return result;
     }
 
@@ -109,7 +102,6 @@ export default class FileService {
         const uploadPath = path.join(this.getRootPath(), STORAGE_DIR, filePath);
         if (!fs.existsSync(uploadPath))
             fs.mkdirSync(uploadPath, { recursive: true });
-
         return uploadPath;
     }
 

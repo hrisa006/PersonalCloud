@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import {BadRequestError} from "../errors/bad-request-error";
 
-
 export function badRequestErrorHandler(err: any, req: Request, res: Response, next: NextFunction): void {
     if (err instanceof BadRequestError) {
         console.error(err.message);

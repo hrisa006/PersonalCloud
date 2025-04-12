@@ -40,21 +40,6 @@ Access your frontend at: http://localhost:5173
 - Uses Dockerfile to build the React TypeScript app with Vite
 - Port: 5173 (exposed locally)
 
-## Docker Compose Configuration
-
-In the *docker-compose.yml* file, the frontend service is set up as follows:
-   ```yaml
-   version: "3.8"
-
-   services:
-   frontend:
-   build: .
-   ports: - "5173:5173"
-   volumes: - .:/app - /app/node_modules
-   stdin_open: true
-   tty: true
-   ```
-
 ## Common Docker Commands
 
 See running containers:
@@ -91,9 +76,3 @@ If you'd prefer to run the app locally without Docker:
    ```
 
 The app will be accessible at: http://localhost:5173
-
-## Notes
-
-- Vite is used for fast development, which includes features like Hot Module Replacement (HMR).
-- The default port for Vite is 5173, which is exposed in the Docker container.
-- Make sure you have Docker and Docker Compose installed to run this setup locally or in a containerized environment.

@@ -1,19 +1,22 @@
 import {NextFunction, Request, Response} from 'express';
 import FileService from '../service/file-service';
+import path from "path";
 
 const fileService = new FileService();
 
-export const fileUpload = (req: Request, res: Response, next: NextFunction) => {
+export const fileUpload = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        fileService.fileUpload(req, res);
+        const uploadResult = await fileService.fileUpload(req);
+        return res.status(200).json(uploadResult);
     } catch (err) {
         return next(err);
     }
 };
 
-export const fileUpdate = (req: Request, res: Response, next: NextFunction) => {
+export const fileUpdate = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        fileService.updateFile(req, res);
+        const updateResult = await fileService.updateFile(req);
+        return res.status(200).json(updateResult);
     } catch (err) {
         return next(err);
     }
@@ -21,7 +24,8 @@ export const fileUpdate = (req: Request, res: Response, next: NextFunction) => {
 
 export const fileRemove = (req: Request, res: Response, next: NextFunction) => {
     try {
-        fileService.removeFile(req, res);
+        fileService.removeFile(req);
+        res.status(200).send('File deleted successfully');
     } catch (err) {
         return next(err);
     }
@@ -29,7 +33,10 @@ export const fileRemove = (req: Request, res: Response, next: NextFunction) => {
 
 export const fileGet = (req: Request, res: Response, next: NextFunction) => {
     try {
-        fileService.getFile(req, res);
+        const internalFilePath = fileService.getFilePath(req);
+        res.download(internalFilePath, path.basename(internalFilePath), (err) => {
+            if (err) throw Error(err.message);
+        });
     } catch (err) {
         return next(err);
     }
