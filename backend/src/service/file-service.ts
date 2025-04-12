@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { Request } from 'express';
 import busboy from 'busboy';
-import {BadRequestError} from "../errors/bad-request-error";
+import {BadRequestError} from '../errors/bad-request-error';
 
 const DIR_BACK_LEVELS = 3;
 const STORAGE_DIR = 'uploads';
@@ -12,7 +12,7 @@ const CLOSE = 'close';
 const ERROR = 'error';
 
 export default class FileService {
-    public fileUpload(req: Request): Promise<any> {
+    public fileUpload(req: Request): Promise<FileUploadResponseDto> {
         const reqFilePath = req.query.filePath as string ?? '';
 
         if (!this.validatePath(reqFilePath))
@@ -34,7 +34,7 @@ export default class FileService {
         return internalFilePath;
     }
 
-    public updateFile(req: Request): Promise<any> {
+    public updateFile(req: Request): Promise<FileUploadResponseDto> {
         let reqFilePath = req.query.filePath as string ?? '';
         if (!this.validatePath(reqFilePath))
             throw new BadRequestError('There was an error parsing the file');
@@ -58,7 +58,7 @@ export default class FileService {
         });
     }
 
-    private handleBusboyFileUpload(filePath: string, req: Request): Promise<any> {
+    private handleBusboyFileUpload(filePath: string, req: Request): Promise<FileUploadResponseDto> {
         return new Promise((resolve, reject) => {
             const bb = busboy({ headers: req.headers });
             let filePathResponse = '';
