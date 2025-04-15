@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
+import SearchResults from './SearchResults';
 import './SearchForm.css';
 
 interface FileResult {
@@ -12,29 +13,45 @@ const SearchBar = () => {
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const searchTimeoutRef = useRef<number | undefined>(undefined);
 
-  const handleSearch = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!query.trim()) return;
-    
+  const fetchFiles = async (searchTerm: string) => {
+    if (!searchTerm.trim()) {
+      setFiles([]);
+      setMessage('');
+      setError('');
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setError('');
     setMessage('');
     setFiles([]);
 
     try {
-      const response = await fetch(`http://localhost:8081/file/search?fileName=${encodeURIComponent(query)}`);
+      const response = await fetch(
+        `http://localhost:8081/file/search?fileName=${encodeURIComponent(
+          searchTerm
+        )}`
+      );
       if (!response.ok) throw new Error('Server error');
-
       const data = await response.json();
-      setMessage(data.message || `Found ${data.files.length} files`);
-
       const formatted = data.files.map((filePath: string) => {
         const name = filePath.split('/').pop() || filePath;
         return { name, path: filePath };
       });
-
-      setFiles(formatted);
+      interface FormattedFile {
+        name: string;
+        path: string;
+      }
+      
+      const filtered: FormattedFile[] = formatted.filter((f: FormattedFile) =>
+        f.name.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      setFiles(filtered);
+      setMessage(
+        data.message || `Found ${filtered.length} file${filtered.length === 1 ? '' : 's'}`
+      );
     } catch (err) {
       setError('Something went wrong with the search');
     } finally {
@@ -42,10 +59,36 @@ const SearchBar = () => {
     }
   };
 
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    setQuery(newValue);
+
+    if(searchTimeoutRef.current){
+      window.clearTimeout(searchTimeoutRef.current);
+    }
+
+    if(newValue.trim()){
+      setMessage("Waiting for results...");
+    }
+
+    searchTimeoutRef.current = window.setTimeout(() => {
+      fetchFiles(newValue);
+    }, 400);
+  };
+
+  const handleSubmit = (e:React.FormEvent) => {
+    e.preventDefault();
+
+    if(searchTimeoutRef.current){
+      window.clearTimeout(searchTimeoutRef.current);
+    }
+
+    fetchFiles(query);
+  }
+
   const getFileIcon = (fileName: string) => {
     const extension = fileName.split('.').pop()?.toLowerCase() || '';
-    
-    switch(extension) {
+    switch (extension) {
       case 'jpg':
       case 'jpeg':
       case 'png':
@@ -73,36 +116,27 @@ const SearchBar = () => {
 
   return (
     <div className="search-container">
-      <form onSubmit={handleSearch} className="input-wrapper">
+      <form className="input-wrapper" onSubmit={handleSubmit}>
         <span id="search-icon">🔍</span>
         <input
           type="text"
           placeholder="Search for files..."
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={handleChange}
         />
-        <button type="submit" className="search-button" disabled={loading}>
-          {loading ? 'Searching...' : 'Search'}
+        <button type="submit" className="search-button" style={{ display: 'none' }}>
+          Search
         </button>
       </form>
-
+      
       {error && <div className="error-message">{error}</div>}
-      {message && <div className="result-message">{message}</div>}
-
-      {files.length > 0 && (
-        <div className="search-results">
-          <h3>Results:</h3>
-          <div className="file-grid">
-            {files.map((file, index) => (
-              <div className="file-card" key={index}>
-                <div className="file-icon">{getFileIcon(file.name)}</div>
-                <div className="file-name">{file.name}</div>
-                <div className="file-path">{file.path}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      
+      <SearchResults 
+        files={files}
+        message={message}
+        loading={loading}
+        getFileIcon={getFileIcon}
+      />
     </div>
   );
 };

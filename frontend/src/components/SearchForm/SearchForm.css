@@ -108,3 +108,7 @@
     text-align: center;
     word-break: break-all;
   }
+
+  .search-button {
+    display: none; /* Hide the button completely */
+  }
