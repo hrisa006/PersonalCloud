@@ -73,7 +73,7 @@ const SearchBar = () => {
 
     searchTimeoutRef.current = window.setTimeout(() => {
       fetchFiles(newValue);
-    }, 400);
+    }, 1000);
   };
 
   const handleSubmit = (e:React.FormEvent) => {
