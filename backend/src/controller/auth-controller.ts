@@ -1,12 +1,14 @@
-import { Request, Response, Router } from "express";
+import { Request, Response } from "express";
 import { userService } from "../service/user-service";  
 
-export const register = (req: Request, res: Response) => {
+export const register = async (req: Request, res: Response) => {
+    try {
     const { email, password } = req.body;
     if (!email || !password) {
         return res.status(400).json({ message: 'Email and password are required' });
     }
-    const success = userService.register(email, password);  
+    const success = await userService.register(email, password); 
+    console.log(success); 
     if (!success) {
         return res.status(409).json({ message: 'User already exists' });
     }
@@ -18,6 +20,10 @@ export const register = (req: Request, res: Response) => {
     });  
 
     return res.status(201).json({ message: 'Registered successfully' });
+    } catch (error) {
+        console.error('Registration failed:', error);
+        return res.status(500).json({ message: 'Internal server error' });
+    }
 };
 
 export const login = (req: Request, res: Response) => {
@@ -28,7 +34,6 @@ export const login = (req: Request, res: Response) => {
         return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    // Записваме токена в cookie, ако е валиден
     res.cookie('token', token, {
         maxAge: 3600000, 
         httpOnly: true,

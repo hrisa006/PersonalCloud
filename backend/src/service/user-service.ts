@@ -1,25 +1,29 @@
 import { User } from "../model/user-model";
+import bcrypt from "bcrypt";
 
 class UserService {
-    private users = new Map<string, User>(); // email -> User
+    private users: User[] = [];
     private tokens = new Map<string, string>(); // token -> email
 
-    register(email: string, password: string): boolean {
-        if (this.users.has(email)) return false;
+    async register(email: string, password: string): Promise<boolean> {
+        if (this.users.some(u => u.email === email)) return false;
+        const hashedPassword = await bcrypt.hash(password, 10);
         const newUser: User = {
             email,
-            password,
+            password: hashedPassword,
             verified: false,
             createdAt: new Date(),
             updatedAt: new Date(),
         };
-        this.users.set(email, newUser);
+        this.users.push(newUser);
         return true;
     }
 
-    login(email: string, password: string): string | null {
-        const user = this.users.get(email);
-        if (!user || user.password !== password) return null;
+    async login(email: string, password: string): Promise<string | null> {
+        const user = this.users.find(u => u.email === email);
+        if (!user) return null;
+        const match = await bcrypt.compare(password, user.password);
+        if (!match) return null;
         const token = `${email}-${Date.now()}`;
         this.tokens.set(token, email);
         return token;
@@ -34,7 +38,7 @@ class UserService {
     }
 
     getUser(email: string): User | undefined {
-        return this.users.get(email);
+        return this.users.find(u => u.email === email);
     }
 }
 
