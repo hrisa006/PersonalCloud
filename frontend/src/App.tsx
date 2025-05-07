@@ -1,27 +1,15 @@
-import { useEffect, useState } from "react";
-import axios from "axios";
+import { Routes, Route, Navigate } from 'react-router-dom';
+import Login from './components/Login';
+import Register from './components/Register';
 
 function App() {
-  const [data, setData] = useState<{ test: string }[]>([]);
-
-  useEffect(() => {
-    const apiUrl = import.meta.env.VITE_URL;
-    axios
-      .get(`${apiUrl}/api/test`)
-      .then((response) => {
-        setData(response.data);
-        console.log(response.data);
-      })
-      .catch((error) => {
-        console.error(error);
-      });
-  }, []);
-
   return (
-    <div>
-      {data.map((item, id) => (
-        <li key={id}>{item.test}</li>
-      ))}
+    <div className="App">
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/" element={<Navigate to="/login" replace />} />
+      </Routes>
     </div>
   );
 }
