@@ -15,8 +15,7 @@ const Login: React.FC = () => {
         password
       });
       localStorage.setItem('token', response.data.token);
-      alert('Login successful!');
-      console.log(response.data);
+      //TODO: Navigatte to Home Screen
     } catch (error) {
       setError('Invalid credentials');
       console.error('Login failed:', error);

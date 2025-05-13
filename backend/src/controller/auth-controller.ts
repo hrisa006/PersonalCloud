@@ -8,7 +8,7 @@ export const register = async (req: Request, res: Response) => {
         return res.status(400).json({ message: 'Email and password are required' });
     }
     const success = await userService.register(email, password); 
-    console.log(success); 
+    
     if (!success) {
         return res.status(409).json({ message: 'User already exists' });
     }
