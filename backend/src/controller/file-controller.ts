@@ -45,8 +45,10 @@ export const fileGet = (req: Request, res: Response, next: NextFunction) => {
 export const searchFiles = (req: Request, res: Response, next: NextFunction) => {
     try {
         const files = fileService.searchFilesByName(req);
-        return res.status(200).json({
-            message: files.length > 0 ? `Found ${files.length} files` : 'No files found',
+        const status = files.length ? 200 : 404
+        const message = files.length > 0 ? `Found ${files.length} files` : 'No files found'
+        return res.status(status).json({
+            message,
             files: files
         });
     } catch (err) {

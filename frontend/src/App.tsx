@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { FaCloud } from "react-icons/fa";
+import SearchBar from './components/SearchForm/SearchForm';
+import './App.css';
 
 function App() {
   const [data, setData] = useState<{ test: string }[]>([]);
 
   useEffect(() => {
-    const apiUrl = import.meta.env.VITE_URL;
+    const apiUrl = import.meta.env.VITE_URL || 'http://localhost:8081';
     axios
       .get(`${apiUrl}/api/test`)
       .then((response) => {
@@ -18,10 +21,26 @@ function App() {
   }, []);
 
   return (
-    <div>
-      {data.map((item, id) => (
-        <li key={id}>{item.test}</li>
-      ))}
+    <div className="app-container">
+      <header className="app-header">
+        <div className="logo-container">
+          <FaCloud size={24} />
+          <h1>Personal Cloud</h1>
+        </div>
+      </header>
+      
+      <main>
+        <SearchBar />
+        
+        <div className="test-data">
+          <h2>Test Data</h2>
+          <ul>
+            {data.map((item, id) => (
+              <li key={id}>{item.test}</li>
+            ))}
+          </ul>
+        </div>
+      </main>
     </div>
   );
 }

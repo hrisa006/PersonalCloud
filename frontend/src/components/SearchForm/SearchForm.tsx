@@ -53,7 +53,7 @@ const SearchBar = () => {
         data.message || `Found ${filtered.length} file${filtered.length === 1 ? '' : 's'}`
       );
     } catch (err) {
-      setError('Something went wrong with the search');
+      setError('Not found');
     } finally {
       setLoading(false);
     }
@@ -82,7 +82,7 @@ const SearchBar = () => {
     if(searchTimeoutRef.current){
       window.clearTimeout(searchTimeoutRef.current);
     }
-
+    
     fetchFiles(query);
   }
 

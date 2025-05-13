@@ -1,5 +1,5 @@
 import React from 'react';
-import './SearchResults.css'; 
+import './SearchResults.css';
 
 interface FileResult {
   name: string;
@@ -10,29 +10,34 @@ interface SearchResultsProps {
   files: FileResult[];
   message: string;
   loading: boolean;
+  error?: string;
   getFileIcon: (fileName: string) => string;
 }
 
-const SearchResults = React.memo(({ files, message, loading, getFileIcon }: SearchResultsProps) => {
+const SearchResults = React.memo(({ files, message, loading,error, getFileIcon }: SearchResultsProps) => {
+  const getFileName = (path: string) => {
+    const parts = path.split('/');
+    return parts[parts.length - 1];
+  };
+
   return (
     <div className="results-container">
+      {error && <div className='result-error'>{error}</div>}
       {message && <div className="result-message">{message}</div>}
       
       {loading && (
         <div className="loading-indicator">
           <div className="spinner"></div>
+          <span>Searching...</span>
         </div>
       )}
       
       {files.length > 0 && (
         <div className="search-results">
-          <h3>Results:</h3>
-          <div className="file-grid">
+          <div className="icons-container">
             {files.map((file, index) => (
-              <div className="file-card" key={index}>
+              <div className="icon-wrapper" key={index} title={getFileName(file.path)}>
                 <div className="file-icon">{getFileIcon(file.name)}</div>
-                <div className="file-name">{file.name}</div>
-                <div className="file-path">{file.path}</div>
               </div>
             ))}
           </div>

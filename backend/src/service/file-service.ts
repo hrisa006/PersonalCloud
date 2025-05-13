@@ -2,7 +2,8 @@ import fs from 'fs';
 import path from 'path';
 import { Request } from 'express';
 import busboy from 'busboy';
-import {BadRequestError} from '../errors/bad-request-error';
+import { BadRequestError } from '../errors/bad-request-error';
+import { NotFoundError } from '../errors/not-found-error';
 
 const DIR_BACK_LEVELS = 3;
 const STORAGE_DIR = 'uploads';
@@ -58,37 +59,40 @@ export default class FileService {
         });
     }
 
+    private searchDirectory(dirPath: string, lowerFileName: string, rootStoragePath: string, results: string[]) {
+        if (!fs.existsSync(dirPath)) 
+            throw new NotFoundError("Dir not found");
+    
+        const items = fs.readdirSync(dirPath);
+    
+        for (const item of items) {
+            const fullPath = path.join(dirPath, item);
+            const stats = fs.statSync(fullPath);
+    
+            if (stats.isDirectory()) {
+                this.searchDirectory(fullPath, lowerFileName, rootStoragePath, results);
+            } else if (item.toLowerCase().includes(lowerFileName)) {
+                const relativePath = path.relative(rootStoragePath, fullPath);
+                results.push(relativePath);
+            }
+        }
+    }
+    
     public searchFilesByName(req: Request): string[] {
         const fileName = req.query.fileName as string;
-        
+    
         if (!fileName || fileName.trim() === '')
             throw new BadRequestError('File name is required');
-            
+    
         if (!this.validatePath(fileName))
             throw new BadRequestError('Invalid file name');
-            
+    
         const rootStoragePath = path.join(this.getRootPath(), STORAGE_DIR);
         const results: string[] = [];
-        
-        const searchDirectory = (dirPath: string) => {
-            if (!fs.existsSync(dirPath)) return;
-            
-            const items = fs.readdirSync(dirPath);
-            
-            for (const item of items) {
-                const fullPath = path.join(dirPath, item);
-                const stats = fs.statSync(fullPath);
-                
-                if (stats.isDirectory()) {
-                    searchDirectory(fullPath);
-                } else if (item.toLowerCase().includes(fileName.toLowerCase())) {
-                    const relativePath = path.relative(rootStoragePath, fullPath);
-                    results.push(relativePath);
-                }
-            }
-        };
-        
-        searchDirectory(rootStoragePath);
+        const lowerFileName = fileName.toLowerCase();
+    
+        this.searchDirectory(rootStoragePath, lowerFileName, rootStoragePath, results);
+    
         return results;
     }
 
