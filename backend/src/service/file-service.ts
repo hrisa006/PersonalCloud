@@ -2,7 +2,8 @@ import fs from 'fs';
 import path from 'path';
 import { Request } from 'express';
 import busboy from 'busboy';
-import {BadRequestError} from '../errors/bad-request-error';
+import { BadRequestError } from '../errors/bad-request-error';
+import { FileRepository } from '../repository/file-repository';
 
 const DIR_BACK_LEVELS = 3;
 const STORAGE_DIR = 'uploads';
@@ -12,50 +13,81 @@ const CLOSE = 'close';
 const ERROR = 'error';
 
 export default class FileService {
-    public fileUpload(req: Request): Promise<FileUploadResponseDto> {
+    private fileRepo: FileRepository;
+    private static DEFAULT_USER_ID = 'f3844740-6e57-49ed-80f8-8adf16970bc8'; // You may replace this with actual auth later
+
+    constructor() {
+        this.fileRepo = new FileRepository();
+    }
+
+    public async fileUpload(req: Request): Promise<FileUploadResponseDto> {
         const reqFilePath = req.query.filePath as string ?? '';
+        const userId = FileService.DEFAULT_USER_ID;
 
         if (!this.validatePath(reqFilePath))
             throw new BadRequestError('Invalid file path');
 
-        return this.handleBusboyFileUpload(reqFilePath, req);
+        const result = await this.handleBusboyFileUpload(userId + '/' + reqFilePath, req);
+
+        result.path = result.path.split('/').slice(1).join('/');
+        await this.fileRepo.createFile({
+            userId,
+            path: result.path,
+            fileType: result.fileType,
+            createdAt: result.createdAt,
+            updatedAt: result.updatedAt,
+        });
+
+        return result;
     }
 
     public getFilePath(req: Request): string {
         const reqFilePath = req.query.filePath as string ?? '';
-        const internalFilePath = path.join(this.getRootPath(), STORAGE_DIR, reqFilePath);
+        const userId = FileService.DEFAULT_USER_ID;
+        const internalFilePath = path.join(this.getRootPath(), STORAGE_DIR, userId, reqFilePath);
 
         if (!fs.existsSync(internalFilePath))
             throw new BadRequestError('File does not exist');
-
         if (!this.validatePath(reqFilePath))
-            throw new BadRequestError('There was an error parsing the file');
+            throw new BadRequestError('Invalid file path');
 
         return internalFilePath;
     }
 
-    public updateFile(req: Request): Promise<FileUploadResponseDto> {
-        let reqFilePath = req.query.filePath as string ?? '';
-        if (!this.validatePath(reqFilePath))
-            throw new BadRequestError('There was an error parsing the file');
+    public async updateFile(req: Request): Promise<FileUploadResponseDto> {
+        const reqFilePath = req.query.filePath as string ?? '';
+        const userId = FileService.DEFAULT_USER_ID;
 
-        this.removeFile(req);
-        return this.handleBusboyFileUpload(path.dirname(reqFilePath), req);
+        if (!this.validatePath(reqFilePath))
+            throw new BadRequestError('Invalid file path');
+
+        await this.removeFile(req, false);
+
+        const result = await this.handleBusboyFileUpload(path.dirname(userId + '/' + reqFilePath), req);
+        result.path = result.path.split('/').slice(1).join('/');
+
+        await this.fileRepo.updateFile(req.query.filePath as string, userId, {
+            updatedAt: result.updatedAt,
+            path: result.path
+        });
+
+        return result;
     }
 
-    public removeFile(req: Request): void {
+    public async removeFile(req: Request, deleteFromDb: Boolean = true): Promise<void> {
         const reqFilePath = req.query.filePath as string ?? '';
-        const internalFilePath = path.join(this.getRootPath(), STORAGE_DIR, reqFilePath);
+        const userId = FileService.DEFAULT_USER_ID;
+        const internalFilePath = path.join(this.getRootPath(), STORAGE_DIR, userId, reqFilePath);
 
         if (!fs.existsSync(internalFilePath))
             throw new BadRequestError('File does not exist');
-
         if (!this.validatePath(reqFilePath))
-            throw new BadRequestError('There was an error deleting the file');
+            throw new BadRequestError('Invalid file path');
 
-        fs.rm(internalFilePath, (err) => {
-            if (err) throw Error(err.message);
-        });
+        fs.rmSync(internalFilePath);
+
+        if(deleteFromDb)
+            await this.fileRepo.deleteFile(reqFilePath, userId);
     }
 
     private handleBusboyFileUpload(filePath: string, req: Request): Promise<FileUploadResponseDto> {
@@ -69,9 +101,15 @@ export default class FileService {
                 this.processFile(filename, savedFile, file);
             });
 
-            bb.on(FINISH, () => resolve({
-                    message: 'Upload complete', path: filePathResponse, fileType: path.extname(filePathResponse),
-                    createdAt: new Date(), updatedAt: new Date()}));
+            bb.on(FINISH, () =>
+                resolve({
+                    message: 'Upload complete',
+                    path: filePathResponse,
+                    fileType: path.extname(filePathResponse),
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                })
+            );
 
             bb.on(ERROR, (err: any) => reject(new BadRequestError(err.message || 'Error in file upload')));
 
@@ -79,17 +117,14 @@ export default class FileService {
         });
     }
 
-
     private processFile(filename: FileName, fileToSave: string, file: NodeJS.ReadableStream) {
-        if (!filename)
-            throw new BadRequestError('There was an error parsing the file');
+        if (!filename) throw new BadRequestError('Invalid filename during upload');
 
         console.log(`Uploading file: ${filename.filename} to ${fileToSave}`);
         const writeStream = fs.createWriteStream(fileToSave);
         file.pipe(writeStream);
         writeStream.on(CLOSE, () => console.log(`Finished writing ${filename.filename}`));
     }
-
 
     private getRootPath(): string {
         let result = __dirname;
