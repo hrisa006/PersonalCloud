@@ -4,6 +4,7 @@ import { Request } from 'express';
 import busboy from 'busboy';
 import { BadRequestError } from '../errors/bad-request-error';
 import { FileRepository } from '../repository/file-repository';
+import { File } from '@prisma/client';
 
 const DIR_BACK_LEVELS = 3;
 const STORAGE_DIR = 'uploads';
@@ -90,12 +91,17 @@ export default class FileService {
             await this.fileRepo.deleteFile(reqFilePath, userId);
     }
 
+    public async getUserFileTree(userId: string): Promise<FileItemDto> {
+        const files = await this.fileRepo.getFilesOwnedByUser(userId);
+        return this.buildFileTree(files);
+    }
+
     private handleBusboyFileUpload(filePath: string, req: Request): Promise<FileUploadResponseDto> {
         return new Promise((resolve, reject) => {
             const bb = busboy({ headers: req.headers });
             let filePathResponse = '';
 
-            bb.on(FILE, (fieldname: string, file: NodeJS.ReadableStream, filename: FileName) => {
+            bb.on(FILE, (fieldname: string, file: NodeJS.ReadableStream, filename: FileNameBb) => {
                 const savedFile = path.join(this.getUploadPath(filePath), filename.filename);
                 filePathResponse = path.join(filePath, filename.filename);
                 this.processFile(filename, savedFile, file);
@@ -117,7 +123,7 @@ export default class FileService {
         });
     }
 
-    private processFile(filename: FileName, fileToSave: string, file: NodeJS.ReadableStream) {
+    private processFile(filename: FileNameBb, fileToSave: string, file: NodeJS.ReadableStream) {
         if (!filename) throw new BadRequestError('Invalid filename during upload');
 
         console.log(`Uploading file: ${filename.filename} to ${fileToSave}`);
@@ -142,5 +148,47 @@ export default class FileService {
 
     private validatePath(filePath: string): boolean {
         return !(filePath.includes('..') || filePath.includes('\\'))
+    }
+
+    private buildFileTree(files: { path: string, fileType: string, createdAt: Date, updatedAt: Date }[]): FileItemDto {
+        const root: FileItemDto = {
+            name: 'root',
+            type: 'folder',
+            ext: '',
+            createdAt: '',
+            updatedAt: '',
+            path: '',
+            items: []
+        };
+
+        for (const file of files) {
+            const parts = file.path.split('/');
+            let current = root;
+            let currentPath = '';
+
+            for (let i = 0; i < parts.length; i++) {
+                const part = parts[i];
+                const isFile = i === parts.length - 1;
+                currentPath = currentPath ? `${currentPath}/${part}` : part;
+                if (!current.items) current.items = [];
+                let next = current.items.find(item => item.name === part);
+                if (!next) {
+                    next = {
+                        name: part,
+                        type: isFile ? 'file' : 'folder',
+                        ext: isFile ? file.fileType : '',
+                        createdAt: isFile ? file.createdAt.toISOString() : '',
+                        updatedAt: isFile ? file.updatedAt.toISOString() : '',
+                        path: currentPath,
+                        ...(isFile ? {} : { items: [] })
+                    };
+                    current.items.push(next);
+                }
+
+                current = next;
+            }
+        }
+
+        return root;
     }
 }

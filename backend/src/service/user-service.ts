@@ -1,4 +1,4 @@
-import { User } from "../model/user-model";
+import { User } from "../dto/user-model";
 import bcrypt from "bcrypt";
 
 class UserService {
