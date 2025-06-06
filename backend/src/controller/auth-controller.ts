@@ -7,7 +7,7 @@ export const register = async (req: Request, res: Response) => {
     if (!email || !password) {
         return res.status(400).json({ message: 'Email and password are required' });
     }
-    const success = await userService.register(email, password); 
+    const success = await userService.register({email, password}); 
     
     if (!success) {
         return res.status(409).json({ message: 'User already exists' });
@@ -33,7 +33,7 @@ export const login = async (req: Request, res: Response) => {
         return res.status(400).json({ message: 'Email and password are required' });
     }
     
-    const token = await userService.login(email, password);
+    const token = await userService.login({email, password});
 
     if (!token) {
         return res.status(401).json({ message: 'Invalid credentials' });

@@ -10,7 +10,6 @@ app.use(cors<express.Request>());
 app.use('/file', fileRoutes);
 app.use('/auth', authRoutes);
 
-app.use('/auth', router);
 
 app.use(badRequestErrorHandler);
 app.use(globalExceptionHandler);
