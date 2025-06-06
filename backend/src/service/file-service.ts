@@ -4,7 +4,7 @@ import { Request } from 'express';
 import busboy from 'busboy';
 import { BadRequestError } from '../errors/bad-request-error';
 import { FileRepository } from '../repository/file-repository';
-import { File } from '@prisma/client';
+import { PermissionType, File, SharedFiles, Users } from '../generated/prisma';
 
 const DIR_BACK_LEVELS = 3;
 const STORAGE_DIR = 'uploads';
@@ -25,8 +25,7 @@ export default class FileService {
         const reqFilePath = req.query.filePath as string ?? '';
         const userId = FileService.DEFAULT_USER_ID;
 
-        if (!this.validatePath(reqFilePath))
-            throw new BadRequestError('Invalid file path');
+        this.validatePath(reqFilePath)
 
         const result = await this.handleBusboyFileUpload(userId + '/' + reqFilePath, req);
 
@@ -49,8 +48,7 @@ export default class FileService {
 
         if (!fs.existsSync(internalFilePath))
             throw new BadRequestError('File does not exist');
-        if (!this.validatePath(reqFilePath))
-            throw new BadRequestError('Invalid file path');
+        this.validatePath(reqFilePath)
 
         return internalFilePath;
     }
@@ -59,8 +57,7 @@ export default class FileService {
         const reqFilePath = req.query.filePath as string ?? '';
         const userId = FileService.DEFAULT_USER_ID;
 
-        if (!this.validatePath(reqFilePath))
-            throw new BadRequestError('Invalid file path');
+        this.validatePath(reqFilePath)
 
         await this.removeFile(req, false);
 
@@ -82,8 +79,7 @@ export default class FileService {
 
         if (!fs.existsSync(internalFilePath))
             throw new BadRequestError('File does not exist');
-        if (!this.validatePath(reqFilePath))
-            throw new BadRequestError('Invalid file path');
+        this.validatePath(reqFilePath)
 
         fs.rmSync(internalFilePath);
 
@@ -94,6 +90,84 @@ export default class FileService {
     public async getUserFileTree(userId: string): Promise<FileItemDto> {
         const files = await this.fileRepo.getFilesOwnedByUser(userId);
         return this.buildFileTree(files);
+    }
+
+    public async shareFileWithUser(req: Request): Promise<SharedFiles> {
+        const { filePath, ownerId, userId, permission } = req.body;
+
+        this.validatePath(filePath);
+        this.validateUserId(ownerId);
+        this.validateUserId(userId);
+        this.validatePermission(permission);
+
+        return this.fileRepo.shareFileWithUser(filePath, ownerId, userId, permission);
+    }
+
+    public async getFilesSharedWithUser(req: Request): Promise<File[]> {
+        const userId = req.header('x-user-id');
+        this.validateUserId(userId);
+
+        return this.fileRepo.getFilesSharedWithUser(userId!);
+    }
+
+    public async getUsersFileIsSharedWith(req: Request): Promise<Users[]> {
+        const filePath = req.query.filePath as string ?? '';
+        const ownerId = req.query.ownerId as string ?? '';
+
+        this.validatePath(filePath);
+        this.validateUserId(ownerId);
+
+        return this.fileRepo.getUsersFileIsSharedWith(filePath, ownerId);
+    }
+
+    public async updateSharedPermission(req: Request): Promise<SharedFiles> {
+        const { filePath, ownerId, userId, permission } = req.body;
+
+        this.validatePath(filePath);
+        this.validateUserId(ownerId);
+        this.validateUserId(userId);
+        this.validatePermission(permission);
+
+        return this.fileRepo.updateSharedPermission(filePath, ownerId, userId, permission);
+    }
+
+    public async unshareFile(req: Request): Promise<SharedFiles> {
+        const { filePath, ownerId, userId } = req.body;
+
+        this.validatePath(filePath);
+        this.validateUserId(ownerId);
+        this.validateUserId(userId);
+
+        return this.fileRepo.unshareFile(filePath, ownerId, userId);
+    }
+
+    public async getUserFilePermission(req: Request): Promise<SharedFiles | null> {
+        const filePath = req.query.filePath as string ?? '';
+        const ownerId = req.query.ownerId as string ?? '';
+        const userId = req.header('x-user-id');
+
+        this.validatePath(filePath);
+        this.validateUserId(ownerId);
+        this.validateUserId(userId);
+
+        return this.fileRepo.getUserFilePermission(filePath, ownerId, userId!);
+    }
+
+    private validateUserId(userId: string | undefined): void {
+        if (!userId || userId.trim() === '') {
+            throw new BadRequestError('Invalid userId');
+        }
+    }
+
+    private validatePermission(permission: string): void {
+        if (!Object.values(PermissionType).includes(permission as PermissionType)) {
+            throw new BadRequestError('Invalid permission value');
+        }
+    }
+
+    private validatePath(filePath: string): void {
+        if ((filePath.includes('..') || filePath.includes('\\')))
+            throw new BadRequestError('Invalid file path');
     }
 
     private handleBusboyFileUpload(filePath: string, req: Request): Promise<FileUploadResponseDto> {
@@ -144,10 +218,6 @@ export default class FileService {
         if (!fs.existsSync(uploadPath))
             fs.mkdirSync(uploadPath, { recursive: true });
         return uploadPath;
-    }
-
-    private validatePath(filePath: string): boolean {
-        return !(filePath.includes('..') || filePath.includes('\\'))
     }
 
     private buildFileTree(files: { path: string, fileType: string, createdAt: Date, updatedAt: Date }[]): FileItemDto {
