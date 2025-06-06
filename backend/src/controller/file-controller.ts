@@ -41,3 +41,16 @@ export const fileGet = (req: Request, res: Response, next: NextFunction) => {
         return next(err);
     }
 };
+
+export const getUserFileTree = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const userId = req.header('x-user-id');
+        if (!userId) {
+            return res.status(400).json({ error: 'Missing x-user-id header' });
+        }
+        const tree = await fileService.getUserFileTree(userId);
+        res.status(200).json(tree);
+    } catch (error) {
+        next(error);
+    }
+};
