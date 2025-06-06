@@ -16,16 +16,20 @@ class UserService {
             updatedAt: new Date(),
         };
         this.users.push(newUser);
+
         return true;
     }
 
     async login(email: string, password: string): Promise<string | null> {
+
         const user = this.users.find(u => u.email === email);
+
         if (!user) return null;
         const match = await bcrypt.compare(password, user.password);
         if (!match) return null;
         const token = `${email}-${Date.now()}`;
         this.tokens.set(token, email);
+
         return token;
     }
 

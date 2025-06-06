@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 import './Login.css';
+import { API_BASE_URL } from '../../utils/constants';
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -10,7 +11,7 @@ const Login: React.FC = () => {
 
   const handleLogin = async () => {
     try {
-      const response = await axios.post('http://localhost:8084/auth/login', {
+      const response = await axios.post(`${API_BASE_URL}/auth/login`, {
         email,
         password
       });
