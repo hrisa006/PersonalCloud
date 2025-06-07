@@ -56,6 +56,12 @@ export const searchFiles = async (
   next: NextFunction
 ) => {
   try {
+    const userId = (req as any).userId;
+    
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
     const files = await fileService.searchFilesByName(req);
     const status = files.length ? 200 : 404;
     const message =
