@@ -32,14 +32,14 @@ export const fileUpdate = async (req: Request, res: Response, next: NextFunction
     }
 };
 
-export const fileRemove = (req: Request, res: Response, next: NextFunction) => {
+export const fileRemove = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const userId = (req as any).userId;
         if (!userId) {
             return res.status(401).json({ message: 'Unauthorized' });
         }
 
-        fileService.removeFile(userId, req);
+        await fileService.removeFile(userId, req);
         res.status(200).send('File deleted successfully');
     } catch (err) {
         return next(err);
@@ -149,11 +149,13 @@ export const unshareFile = async (req: Request, res: Response, next: NextFunctio
 export const getUserFilePermission = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const userId = (req as any).userId;
+        const filePath = req.query.filePath as string ?? '';
+        const ownerId = req.query.ownerId as string ?? '';
         if (!userId) {
             return res.status(401).json({ message: 'Unauthorized' });
         }
 
-        const result = await fileService.getUserFilePermission(userId, req);
+        const result = await fileService.getUserFilePermission(ownerId, userId, filePath);
         return res.status(200).json(result);
     } catch (err) {
         return next(err);

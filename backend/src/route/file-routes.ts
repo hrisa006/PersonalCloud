@@ -1,15 +1,12 @@
 import { Router } from 'express';
 import {
-    fileUpload,
+    fileUpload, fileGet, fileUpdate, fileRemove,
     getFilesSharedWithUser, getUserFilePermission,
     getUserFileTree,
     getUsersFileIsSharedWith,
     shareFileWithUser, unshareFile, updateSharedPermission
 } from '../controller/file-controller';
-import { fileGet } from '../controller/file-controller';
-import { fileUpdate } from '../controller/file-controller';
-import { fileRemove } from '../controller/file-controller';
-import {authMiddleware} from "../middleware/auth-middleware";
+import { authMiddleware } from "../middleware/auth-middleware";
 
 const fileRouter = Router();
 
