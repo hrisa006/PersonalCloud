@@ -1,4 +1,4 @@
-class FileName {
+class FileNameBb {
     filename: string;
     encoding: string;
     mimeType: string;

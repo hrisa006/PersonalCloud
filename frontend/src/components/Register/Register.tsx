@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import './Register.css';
+import { API_BASE_URL } from '../../utils/constants';
+import { useNavigate } from 'react-router-dom';
 
 const Register: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -10,6 +12,8 @@ const Register: React.FC = () => {
   const [error, setError] = useState('');
   const [passwordError, setPasswordError] = useState('');
 
+  const navigate = useNavigate();
+
   const handleRegister = async () => {
     setPasswordError('');
     setError('');
@@ -18,7 +22,7 @@ const Register: React.FC = () => {
       return;
     }
     try {
-      const response = await axios.post('http://localhost:8084/auth/register', {
+      const response = await axios.post(`${API_BASE_URL}/auth/register`, {
         email,
         password
       });
@@ -26,6 +30,9 @@ const Register: React.FC = () => {
       setEmail('');
       setPassword('');
       setConfirmPassword('');
+      setError('');
+
+      navigate('/login');
     } catch (error) {
       setError('User already exists');
       console.error('Registration failed:', error);
