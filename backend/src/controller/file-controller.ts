@@ -54,3 +54,57 @@ export const getUserFileTree = async (req: Request, res: Response, next: NextFun
         next(error);
     }
 };
+
+export const shareFileWithUser = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const result = await fileService.shareFileWithUser(req);
+        return res.status(200).json(result);
+    } catch (err) {
+        return next(err);
+    }
+};
+
+export const getFilesSharedWithUser = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const result = await fileService.getFilesSharedWithUser(req);
+        return res.status(200).json(result);
+    } catch (err) {
+        return next(err);
+    }
+};
+
+export const getUsersFileIsSharedWith = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const result = await fileService.getUsersFileIsSharedWith(req);
+        return res.status(200).json(result);
+    } catch (err) {
+        return next(err);
+    }
+};
+
+export const updateSharedPermission = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const result = await fileService.updateSharedPermission(req);
+        return res.status(200).json(result);
+    } catch (err) {
+        return next(err);
+    }
+};
+
+export const unshareFile = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const result = await fileService.unshareFile(req);
+        return res.status(200).json(result);
+    } catch (err) {
+        return next(err);
+    }
+};
+
+export const getUserFilePermission = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const result = await fileService.getUserFilePermission(req);
+        return res.status(200).json(result);
+    } catch (err) {
+        return next(err);
+    }
+};

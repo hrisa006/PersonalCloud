@@ -1,5 +1,5 @@
-import { PrismaClient } from '../generated/prisma';
-import { File, SharedFiles, Users, PermissionType } from '@prisma/client';
+import type { File, SharedFiles, Users } from '@prisma/client';
+import { PrismaClient, PermissionType } from '@prisma/client';
 
 export class FileRepository {
   prisma: PrismaClient = new PrismaClient({ log: ['query', 'info'] });
