@@ -41,3 +41,70 @@ export const fileGet = (req: Request, res: Response, next: NextFunction) => {
         return next(err);
     }
 };
+
+export const getUserFileTree = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const userId = req.header('x-user-id');
+        if (!userId) {
+            return res.status(400).json({ error: 'Missing x-user-id header' });
+        }
+        const tree = await fileService.getUserFileTree(userId);
+        res.status(200).json(tree);
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const shareFileWithUser = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const result = await fileService.shareFileWithUser(req);
+        return res.status(200).json(result);
+    } catch (err) {
+        return next(err);
+    }
+};
+
+export const getFilesSharedWithUser = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const result = await fileService.getFilesSharedWithUser(req);
+        return res.status(200).json(result);
+    } catch (err) {
+        return next(err);
+    }
+};
+
+export const getUsersFileIsSharedWith = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const result = await fileService.getUsersFileIsSharedWith(req);
+        return res.status(200).json(result);
+    } catch (err) {
+        return next(err);
+    }
+};
+
+export const updateSharedPermission = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const result = await fileService.updateSharedPermission(req);
+        return res.status(200).json(result);
+    } catch (err) {
+        return next(err);
+    }
+};
+
+export const unshareFile = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const result = await fileService.unshareFile(req);
+        return res.status(200).json(result);
+    } catch (err) {
+        return next(err);
+    }
+};
+
+export const getUserFilePermission = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const result = await fileService.getUserFilePermission(req);
+        return res.status(200).json(result);
+    } catch (err) {
+        return next(err);
+    }
+};
