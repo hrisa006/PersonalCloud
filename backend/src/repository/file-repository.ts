@@ -103,4 +103,30 @@ export class FileRepository {
       },
     });
   }
+  async searchFilesWithPermission(nameQuery: string, userId: string): Promise<File[]> {
+  return this.prisma.file.findMany({
+    where: {
+      OR: [
+        {
+          userId,
+          path: {
+            contains: nameQuery,
+            mode: 'insensitive',
+          }
+        },
+        {
+          sharedFiles: {
+            some: {
+              userId: userId,
+            }
+          },
+          path: {
+            contains: nameQuery,
+            mode: 'insensitive',
+          }
+        }
+      ]
+    }
+  });
+}
 }

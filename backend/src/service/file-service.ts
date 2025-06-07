@@ -1,302 +1,362 @@
-import fs from 'fs';
-import path from 'path';
-import { Request } from 'express';
-import busboy from 'busboy';
-import { BadRequestError } from '../errors/bad-request-error';
-import { NotFoundError } from '../errors/not-found-error';
-import { FileRepository } from '../repository/file-repository';
-import { File, SharedFiles, Users, PermissionType } from '@prisma/client';
+import fs from "fs";
+import path from "path";
+import { Request } from "express";
+import busboy from "busboy";
+import { BadRequestError } from "../errors/bad-request-error";
+import { NotFoundError } from "../errors/not-found-error";
+import { FileRepository } from "../repository/file-repository";
+import { File, SharedFiles, Users, PermissionType } from "../generated/prisma";
 
 const DIR_BACK_LEVELS = 3;
-const STORAGE_DIR = 'tmp/uploads';
-const FINISH = 'finish';
-const FILE = 'file';
-const CLOSE = 'close';
-const ERROR = 'error';
+const STORAGE_DIR = "tmp/uploads";
+const FINISH = "finish";
+const FILE = "file";
+const CLOSE = "close";
+const ERROR = "error";
 
 export default class FileService {
-    private fileRepo: FileRepository;
-    private static DEFAULT_USER_ID = 'f3844740-6e57-49ed-80f8-8adf16970bc8';
+  private fileRepo: FileRepository;
+  private static DEFAULT_USER_ID = "f3844740-6e57-49ed-80f8-8adf16970bc8";
 
-    constructor() {
-        this.fileRepo = new FileRepository();
+  constructor() {
+    this.fileRepo = new FileRepository();
+  }
+
+  public async fileUpload(req: Request): Promise<FileUploadResponseDto> {
+    const reqFilePath = (req.query.filePath as string) ?? "";
+    const userId = FileService.DEFAULT_USER_ID;
+
+    this.validatePath(reqFilePath);
+
+    const result = await this.handleBusboyFileUpload(
+      userId + "/" + reqFilePath,
+      req
+    );
+
+    result.path = result.path.split("/").slice(1).join("/");
+    await this.fileRepo.createFile({
+      userId,
+      path: result.path,
+      fileType: result.fileType,
+      createdAt: result.createdAt,
+      updatedAt: result.updatedAt,
+    });
+
+    return result;
+  }
+
+  public getFilePath(req: Request): string {
+    const reqFilePath = (req.query.filePath as string) ?? "";
+    const userId = FileService.DEFAULT_USER_ID;
+    const internalFilePath = path.join(
+      this.getRootPath(),
+      STORAGE_DIR,
+      userId,
+      reqFilePath
+    );
+
+    if (!fs.existsSync(internalFilePath))
+      throw new BadRequestError("File does not exist");
+    this.validatePath(reqFilePath);
+
+    return internalFilePath;
+  }
+
+  public async updateFile(req: Request): Promise<FileUploadResponseDto> {
+    const reqFilePath = (req.query.filePath as string) ?? "";
+    const userId = FileService.DEFAULT_USER_ID;
+
+    this.validatePath(reqFilePath);
+
+    await this.removeFile(req, false);
+
+    const result = await this.handleBusboyFileUpload(
+      path.dirname(userId + "/" + reqFilePath),
+      req
+    );
+    result.path = result.path.split("/").slice(1).join("/");
+
+    await this.fileRepo.updateFile(req.query.filePath as string, userId, {
+      updatedAt: result.updatedAt,
+      path: result.path,
+    });
+
+    return result;
+  }
+
+  public async removeFile(
+    req: Request,
+    deleteFromDb: Boolean = true
+  ): Promise<void> {
+    const reqFilePath = (req.query.filePath as string) ?? "";
+    const userId = FileService.DEFAULT_USER_ID;
+    const internalFilePath = path.join(
+      this.getRootPath(),
+      STORAGE_DIR,
+      userId,
+      reqFilePath
+    );
+
+    if (!fs.existsSync(internalFilePath))
+      throw new BadRequestError("File does not exist");
+    this.validatePath(reqFilePath);
+
+    fs.rmSync(internalFilePath);
+
+    if (deleteFromDb) await this.fileRepo.deleteFile(reqFilePath, userId);
+  }
+
+  public async getUserFileTree(userId: string): Promise<FileItemDto> {
+    const files = await this.fileRepo.getFilesOwnedByUser(userId);
+    return this.buildFileTree(files);
+  }
+
+  public async shareFileWithUser(req: Request): Promise<SharedFiles> {
+    const { filePath, ownerId, userId, permission } = req.body;
+
+    this.validatePath(filePath);
+    this.validateUserId(ownerId);
+    this.validateUserId(userId);
+    this.validatePermission(permission);
+
+    return this.fileRepo.shareFileWithUser(
+      filePath,
+      ownerId,
+      userId,
+      permission
+    );
+  }
+
+  public async getFilesSharedWithUser(req: Request): Promise<File[]> {
+    const userId = req.header("x-user-id");
+    this.validateUserId(userId);
+
+    return this.fileRepo.getFilesSharedWithUser(userId!);
+  }
+
+  public async getUsersFileIsSharedWith(req: Request): Promise<Users[]> {
+    const filePath = (req.query.filePath as string) ?? "";
+    const ownerId = (req.query.ownerId as string) ?? "";
+
+    this.validatePath(filePath);
+    this.validateUserId(ownerId);
+
+    return this.fileRepo.getUsersFileIsSharedWith(filePath, ownerId);
+  }
+
+  public async updateSharedPermission(req: Request): Promise<SharedFiles> {
+    const { filePath, ownerId, userId, permission } = req.body;
+
+    this.validatePath(filePath);
+    this.validateUserId(ownerId);
+    this.validateUserId(userId);
+    this.validatePermission(permission);
+
+    return this.fileRepo.updateSharedPermission(
+      filePath,
+      ownerId,
+      userId,
+      permission
+    );
+  }
+
+  public async unshareFile(req: Request): Promise<SharedFiles> {
+    const { filePath, ownerId, userId } = req.body;
+
+    this.validatePath(filePath);
+    this.validateUserId(ownerId);
+    this.validateUserId(userId);
+
+    return this.fileRepo.unshareFile(filePath, ownerId, userId);
+  }
+
+  public async getUserFilePermission(
+    req: Request
+  ): Promise<SharedFiles | null> {
+    const filePath = (req.query.filePath as string) ?? "";
+    const ownerId = (req.query.ownerId as string) ?? "";
+    const userId = req.header("x-user-id");
+
+    this.validatePath(filePath);
+    this.validateUserId(ownerId);
+    this.validateUserId(userId);
+
+    return this.fileRepo.getUserFilePermission(filePath, ownerId, userId!);
+  }
+
+  private validateUserId(userId: string | undefined): void {
+    if (!userId || userId.trim() === "") {
+      throw new BadRequestError("Invalid userId");
     }
+  }
 
-    public async fileUpload(req: Request): Promise<FileUploadResponseDto> {
-        const reqFilePath = req.query.filePath as string ?? '';
-        const userId = FileService.DEFAULT_USER_ID;
-
-        this.validatePath(reqFilePath)
-
-        const result = await this.handleBusboyFileUpload(userId + '/' + reqFilePath, req);
-
-        result.path = result.path.split('/').slice(1).join('/');
-        await this.fileRepo.createFile({
-            userId,
-            path: result.path,
-            fileType: result.fileType,
-            createdAt: result.createdAt,
-            updatedAt: result.updatedAt,
-        });
-
-        return result;
+  private validatePermission(permission: string): void {
+    if (!Object.values(PermissionType).includes(permission as PermissionType)) {
+      throw new BadRequestError("Invalid permission value");
     }
+  }
 
-    public getFilePath(req: Request): string {
-        const reqFilePath = req.query.filePath as string ?? '';
-        const userId = FileService.DEFAULT_USER_ID;
-        const internalFilePath = path.join(this.getRootPath(), STORAGE_DIR, userId, reqFilePath);
+  private validatePath(filePath: string): void {
+    if (filePath.includes("..") || filePath.includes("\\"))
+      throw new BadRequestError("Invalid file path");
+  }
 
-        if (!fs.existsSync(internalFilePath))
-            throw new BadRequestError('File does not exist');
-        this.validatePath(reqFilePath)
+  private searchDirectory(
+    dirPath: string,
+    lowerFileName: string,
+    rootStoragePath: string,
+    results: string[]
+  ) {
+    if (!fs.existsSync(dirPath)) throw new NotFoundError("Dir not found");
 
-        return internalFilePath;
+    const items = fs.readdirSync(dirPath);
+
+    for (const item of items) {
+      const fullPath = path.join(dirPath, item);
+      const stats = fs.statSync(fullPath);
+
+      if (stats.isDirectory()) {
+        this.searchDirectory(fullPath, lowerFileName, rootStoragePath, results);
+      } else if (item.toLowerCase().includes(lowerFileName)) {
+        const relativePath = path.relative(rootStoragePath, fullPath);
+        results.push(relativePath);
+      }
     }
+  }
 
-    public async updateFile(req: Request): Promise<FileUploadResponseDto> {
-        const reqFilePath = req.query.filePath as string ?? '';
-        const userId = FileService.DEFAULT_USER_ID;
+  public async searchFilesByName(req: Request): Promise<string[]> {
+    const fileName = req.query.fileName as string;
+    const userId = FileService.DEFAULT_USER_ID; // TODO: Replace with actual user from token/session
 
-        this.validatePath(reqFilePath)
+    if (!fileName || fileName.trim() === "")
+      throw new BadRequestError("File name is required");
 
-        await this.removeFile(req, false);
+    this.validatePath(fileName);
 
-        const result = await this.handleBusboyFileUpload(path.dirname(userId + '/' + reqFilePath), req);
-        result.path = result.path.split('/').slice(1).join('/');
+    const matchingFiles =  await this.fileRepo.searchFilesWithPermission(
+        fileName,
+        userId
+    );
 
-        await this.fileRepo.updateFile(req.query.filePath as string, userId, {
-            updatedAt: result.updatedAt,
-            path: result.path
-        });
+    return matchingFiles.map((f) => f.path);
+  }
 
-        return result;
-    }
+  private handleBusboyFileUpload(
+    filePath: string,
+    req: Request
+  ): Promise<FileUploadResponseDto> {
+    return new Promise((resolve, reject) => {
+      const bb = busboy({ headers: req.headers });
+      let filePathResponse = "";
 
-    public async removeFile(req: Request, deleteFromDb: Boolean = true): Promise<void> {
-        const reqFilePath = req.query.filePath as string ?? '';
-        const userId = FileService.DEFAULT_USER_ID;
-        const internalFilePath = path.join(this.getRootPath(), STORAGE_DIR, userId, reqFilePath);
-
-        if (!fs.existsSync(internalFilePath))
-            throw new BadRequestError('File does not exist');
-        this.validatePath(reqFilePath)
-
-        fs.rmSync(internalFilePath);
-
-        if(deleteFromDb)
-            await this.fileRepo.deleteFile(reqFilePath, userId);
-    }
-
-    public async getUserFileTree(userId: string): Promise<FileItemDto> {
-        const files = await this.fileRepo.getFilesOwnedByUser(userId);
-        return this.buildFileTree(files);
-    }
-
-    public async shareFileWithUser(req: Request): Promise<SharedFiles> {
-        const { filePath, ownerId, userId, permission } = req.body;
-
-        this.validatePath(filePath);
-        this.validateUserId(ownerId);
-        this.validateUserId(userId);
-        this.validatePermission(permission);
-
-        return this.fileRepo.shareFileWithUser(filePath, ownerId, userId, permission);
-    }
-
-    public async getFilesSharedWithUser(req: Request): Promise<File[]> {
-        const userId = req.header('x-user-id');
-        this.validateUserId(userId);
-
-        return this.fileRepo.getFilesSharedWithUser(userId!);
-    }
-
-    public async getUsersFileIsSharedWith(req: Request): Promise<Users[]> {
-        const filePath = req.query.filePath as string ?? '';
-        const ownerId = req.query.ownerId as string ?? '';
-
-        this.validatePath(filePath);
-        this.validateUserId(ownerId);
-
-        return this.fileRepo.getUsersFileIsSharedWith(filePath, ownerId);
-    }
-
-    public async updateSharedPermission(req: Request): Promise<SharedFiles> {
-        const { filePath, ownerId, userId, permission } = req.body;
-
-        this.validatePath(filePath);
-        this.validateUserId(ownerId);
-        this.validateUserId(userId);
-        this.validatePermission(permission);
-
-        return this.fileRepo.updateSharedPermission(filePath, ownerId, userId, permission);
-    }
-
-    public async unshareFile(req: Request): Promise<SharedFiles> {
-        const { filePath, ownerId, userId } = req.body;
-
-        this.validatePath(filePath);
-        this.validateUserId(ownerId);
-        this.validateUserId(userId);
-
-        return this.fileRepo.unshareFile(filePath, ownerId, userId);
-    }
-
-    public async getUserFilePermission(req: Request): Promise<SharedFiles | null> {
-        const filePath = req.query.filePath as string ?? '';
-        const ownerId = req.query.ownerId as string ?? '';
-        const userId = req.header('x-user-id');
-
-        this.validatePath(filePath);
-        this.validateUserId(ownerId);
-        this.validateUserId(userId);
-
-        return this.fileRepo.getUserFilePermission(filePath, ownerId, userId!);
-    }
-
-    private validateUserId(userId: string | undefined): void {
-        if (!userId || userId.trim() === '') {
-            throw new BadRequestError('Invalid userId');
+      bb.on(
+        FILE,
+        (
+          fieldname: string,
+          file: NodeJS.ReadableStream,
+          filename: FileNameBb
+        ) => {
+          const savedFile = path.join(
+            this.getUploadPath(filePath),
+            filename.filename
+          );
+          filePathResponse = path.join(filePath, filename.filename);
+          this.processFile(filename, savedFile, file);
         }
-    }
+      );
 
-    private validatePermission(permission: string): void {
-        if (!Object.values(PermissionType).includes(permission as PermissionType)) {
-            throw new BadRequestError('Invalid permission value');
-        }
-    }
+      bb.on(FINISH, () =>
+        resolve({
+          message: "Upload complete",
+          path: filePathResponse,
+          fileType: path.extname(filePathResponse),
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        })
+      );
 
-    private validatePath(filePath: string): void {
-        if ((filePath.includes('..') || filePath.includes('\\')))
-            throw new BadRequestError('Invalid file path');
-    }
+      bb.on(ERROR, (err: any) =>
+        reject(new BadRequestError(err.message || "Error in file upload"))
+      );
 
-    private searchDirectory(dirPath: string, lowerFileName: string, rootStoragePath: string, results: string[]) {
-        if (!fs.existsSync(dirPath)) 
-            throw new NotFoundError("Dir not found");
-    
-        const items = fs.readdirSync(dirPath);
-    
-        for (const item of items) {
-            const fullPath = path.join(dirPath, item);
-            const stats = fs.statSync(fullPath);
-    
-            if (stats.isDirectory()) {
-                this.searchDirectory(fullPath, lowerFileName, rootStoragePath, results);
-            } else if (item.toLowerCase().includes(lowerFileName)) {
-                const relativePath = path.relative(rootStoragePath, fullPath);
-                results.push(relativePath);
-            }
-        }
-    }
-    
-    public searchFilesByName(req: Request): string[] {
-        const fileName = req.query.fileName as string;
-    
-        if (!fileName || fileName.trim() === '')
-            throw new BadRequestError('File name is required');
-    
-        if (!this.validatePath(fileName))
-            throw new BadRequestError('Invalid file name');
-    
-        const rootStoragePath = path.join(this.getRootPath(), STORAGE_DIR);
-        const results: string[] = [];
-        const lowerFileName = fileName.toLowerCase();
-    
-        this.searchDirectory(rootStoragePath, lowerFileName, rootStoragePath, results);
-    
-        return results;
-    }
+      req.pipe(bb);
+    });
+  }
 
-    private handleBusboyFileUpload(filePath: string, req: Request): Promise<FileUploadResponseDto> {
-        return new Promise((resolve, reject) => {
-            const bb = busboy({ headers: req.headers });
-            let filePathResponse = '';
+  private processFile(
+    filename: FileNameBb,
+    fileToSave: string,
+    file: NodeJS.ReadableStream
+  ) {
+    if (!filename) throw new BadRequestError("Invalid filename during upload");
 
-            bb.on(FILE, (fieldname: string, file: NodeJS.ReadableStream, filename: FileNameBb) => {
-                const savedFile = path.join(this.getUploadPath(filePath), filename.filename);
-                filePathResponse = path.join(filePath, filename.filename);
-                this.processFile(filename, savedFile, file);
-            });
+    console.log(`Uploading file: ${filename.filename} to ${fileToSave}`);
+    const writeStream = fs.createWriteStream(fileToSave);
+    file.pipe(writeStream);
+    writeStream.on(CLOSE, () =>
+      console.log(`Finished writing ${filename.filename}`)
+    );
+  }
 
-            bb.on(FINISH, () =>
-                resolve({
-                    message: 'Upload complete',
-                    path: filePathResponse,
-                    fileType: path.extname(filePathResponse),
-                    createdAt: new Date(),
-                    updatedAt: new Date(),
-                })
-            );
+  private getRootPath(): string {
+    let result = __dirname;
+    for (let i = 0; i < DIR_BACK_LEVELS; i++) result = path.dirname(result);
+    return result;
+  }
 
-            bb.on(ERROR, (err: any) => reject(new BadRequestError(err.message || 'Error in file upload')));
+  private getUploadPath(filePath: string): string {
+    const uploadPath = path.join(this.getRootPath(), STORAGE_DIR, filePath);
+    if (!fs.existsSync(uploadPath))
+      fs.mkdirSync(uploadPath, { recursive: true });
+    return uploadPath;
+  }
 
-            req.pipe(bb);
-        });
-    }
+  private buildFileTree(
+    files: {
+      path: string;
+      fileType: string;
+      createdAt: Date;
+      updatedAt: Date;
+    }[]
+  ): FileItemDto {
+    const root: FileItemDto = {
+      name: "root",
+      type: "folder",
+      ext: "",
+      createdAt: "",
+      updatedAt: "",
+      path: "",
+      items: [],
+    };
 
-    private processFile(filename: FileNameBb, fileToSave: string, file: NodeJS.ReadableStream) {
-        if (!filename) throw new BadRequestError('Invalid filename during upload');
+    for (const file of files) {
+      const parts = file.path.split("/");
+      let current = root;
+      let currentPath = "";
 
-        console.log(`Uploading file: ${filename.filename} to ${fileToSave}`);
-        const writeStream = fs.createWriteStream(fileToSave);
-        file.pipe(writeStream);
-        writeStream.on(CLOSE, () => console.log(`Finished writing ${filename.filename}`));
-    }
-
-    private getRootPath(): string {
-        let result = __dirname;
-        for (let i = 0; i < DIR_BACK_LEVELS; i++)
-            result = path.dirname(result);
-        return result;
-    }
-
-    private getUploadPath(filePath: string): string {
-        const uploadPath = path.join(this.getRootPath(), STORAGE_DIR, filePath);
-        if (!fs.existsSync(uploadPath))
-            fs.mkdirSync(uploadPath, { recursive: true });
-        return uploadPath;
-    }
-
-    private buildFileTree(files: { path: string, fileType: string, createdAt: Date, updatedAt: Date }[]): FileItemDto {
-        const root: FileItemDto = {
-            name: 'root',
-            type: 'folder',
-            ext: '',
-            createdAt: '',
-            updatedAt: '',
-            path: '',
-            items: []
-        };
-
-        for (const file of files) {
-            const parts = file.path.split('/');
-            let current = root;
-            let currentPath = '';
-
-            for (let i = 0; i < parts.length; i++) {
-                const part = parts[i];
-                const isFile = i === parts.length - 1;
-                currentPath = currentPath ? `${currentPath}/${part}` : part;
-                if (!current.items) current.items = [];
-                let next = current.items.find(item => item.name === part);
-                if (!next) {
-                    next = {
-                        name: part,
-                        type: isFile ? 'file' : 'folder',
-                        ext: isFile ? file.fileType : '',
-                        createdAt: isFile ? file.createdAt.toISOString() : '',
-                        updatedAt: isFile ? file.updatedAt.toISOString() : '',
-                        path: currentPath,
-                        ...(isFile ? {} : { items: [] })
-                    };
-                    current.items.push(next);
-                }
-
-                current = next;
-            }
+      for (let i = 0; i < parts.length; i++) {
+        const part = parts[i];
+        const isFile = i === parts.length - 1;
+        currentPath = currentPath ? `${currentPath}/${part}` : part;
+        if (!current.items) current.items = [];
+        let next = current.items.find((item) => item.name === part);
+        if (!next) {
+          next = {
+            name: part,
+            type: isFile ? "file" : "folder",
+            ext: isFile ? file.fileType : "",
+            createdAt: isFile ? file.createdAt.toISOString() : "",
+            updatedAt: isFile ? file.updatedAt.toISOString() : "",
+            path: currentPath,
+            ...(isFile ? {} : { items: [] }),
+          };
+          current.items.push(next);
         }
 
-        return root;
+        current = next;
+      }
     }
+
+    return root;
+  }
 }
