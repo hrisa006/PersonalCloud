@@ -1,12 +1,17 @@
-import {NextFunction, Request, Response} from 'express';
+import { NextFunction, Request, Response } from 'express';
 import FileService from '../service/file-service';
-import path from "path";
+import path from 'path';
 
 const fileService = new FileService();
 
 export const fileUpload = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const uploadResult = await fileService.fileUpload(req);
+        const userId = (req as any).userId;
+        if (!userId) {
+            return res.status(401).json({ message: 'Unauthorized' });
+        }
+
+        const uploadResult = await fileService.fileUpload(userId, req);
         return res.status(200).json(uploadResult);
     } catch (err) {
         return next(err);
@@ -15,25 +20,40 @@ export const fileUpload = async (req: Request, res: Response, next: NextFunction
 
 export const fileUpdate = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const updateResult = await fileService.updateFile(req);
+        const userId = (req as any).userId;
+        if (!userId) {
+            return res.status(401).json({ message: 'Unauthorized' });
+        }
+
+        const updateResult = await fileService.updateFile(userId, req);
         return res.status(200).json(updateResult);
     } catch (err) {
         return next(err);
     }
 };
 
-export const fileRemove = (req: Request, res: Response, next: NextFunction) => {
+export const fileRemove = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        fileService.removeFile(req);
+        const userId = (req as any).userId;
+        if (!userId) {
+            return res.status(401).json({ message: 'Unauthorized' });
+        }
+
+        await fileService.removeFile(userId, req);
         res.status(200).send('File deleted successfully');
     } catch (err) {
         return next(err);
     }
 };
 
-export const fileGet = (req: Request, res: Response, next: NextFunction) => {
+export const fileGet = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const internalFilePath = fileService.getFilePath(req);
+        const userId = (req as any).userId;
+        if (!userId) {
+            return res.status(401).json({ message: 'Unauthorized' });
+        }
+
+        const internalFilePath = await fileService.getFilePath(userId, req);
         res.download(internalFilePath, path.basename(internalFilePath), (err) => {
             if (err) throw Error(err.message);
         });
@@ -44,10 +64,11 @@ export const fileGet = (req: Request, res: Response, next: NextFunction) => {
 
 export const getUserFileTree = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const userId = req.header('x-user-id');
+        const userId = (req as any).userId;
         if (!userId) {
-            return res.status(400).json({ error: 'Missing x-user-id header' });
+            return res.status(401).json({ message: 'Unauthorized' });
         }
+
         const tree = await fileService.getUserFileTree(userId);
         res.status(200).json(tree);
     } catch (error) {
@@ -57,7 +78,12 @@ export const getUserFileTree = async (req: Request, res: Response, next: NextFun
 
 export const shareFileWithUser = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const result = await fileService.shareFileWithUser(req);
+        const userId = (req as any).userId;
+        if (!userId) {
+            return res.status(401).json({ message: 'Unauthorized' });
+        }
+
+        const result = await fileService.shareFileWithUser(userId, req);
         return res.status(200).json(result);
     } catch (err) {
         return next(err);
@@ -66,7 +92,12 @@ export const shareFileWithUser = async (req: Request, res: Response, next: NextF
 
 export const getFilesSharedWithUser = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const result = await fileService.getFilesSharedWithUser(req);
+        const userId = (req as any).userId;
+        if (!userId) {
+            return res.status(401).json({ message: 'Unauthorized' });
+        }
+
+        const result = await fileService.getFilesSharedWithUser(userId);
         return res.status(200).json(result);
     } catch (err) {
         return next(err);
@@ -75,7 +106,12 @@ export const getFilesSharedWithUser = async (req: Request, res: Response, next: 
 
 export const getUsersFileIsSharedWith = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const result = await fileService.getUsersFileIsSharedWith(req);
+        const userId = (req as any).userId;
+        if (!userId) {
+            return res.status(401).json({ message: 'Unauthorized' });
+        }
+
+        const result = await fileService.getUsersFileIsSharedWith(userId, req);
         return res.status(200).json(result);
     } catch (err) {
         return next(err);
@@ -84,7 +120,12 @@ export const getUsersFileIsSharedWith = async (req: Request, res: Response, next
 
 export const updateSharedPermission = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const result = await fileService.updateSharedPermission(req);
+        const userId = (req as any).userId;
+        if (!userId) {
+            return res.status(401).json({ message: 'Unauthorized' });
+        }
+
+        const result = await fileService.updateSharedPermission(userId, req);
         return res.status(200).json(result);
     } catch (err) {
         return next(err);
@@ -93,7 +134,12 @@ export const updateSharedPermission = async (req: Request, res: Response, next: 
 
 export const unshareFile = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const result = await fileService.unshareFile(req);
+        const userId = (req as any).userId;
+        if (!userId) {
+            return res.status(401).json({ message: 'Unauthorized' });
+        }
+
+        const result = await fileService.unshareFile(userId, req);
         return res.status(200).json(result);
     } catch (err) {
         return next(err);
@@ -102,7 +148,14 @@ export const unshareFile = async (req: Request, res: Response, next: NextFunctio
 
 export const getUserFilePermission = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const result = await fileService.getUserFilePermission(req);
+        const userId = (req as any).userId;
+        const filePath = req.query.filePath as string ?? '';
+        const ownerId = req.query.ownerId as string ?? '';
+        if (!userId) {
+            return res.status(401).json({ message: 'Unauthorized' });
+        }
+
+        const result = await fileService.getUserFilePermission(ownerId, userId, filePath);
         return res.status(200).json(result);
     } catch (err) {
         return next(err);
