@@ -46,14 +46,14 @@ export const fileRemove = (req: Request, res: Response, next: NextFunction) => {
     }
 };
 
-export const fileGet = (req: Request, res: Response, next: NextFunction) => {
+export const fileGet = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const userId = (req as any).userId;
         if (!userId) {
             return res.status(401).json({ message: 'Unauthorized' });
         }
 
-        const internalFilePath = fileService.getFilePath(userId, req);
+        const internalFilePath = await fileService.getFilePath(userId, req);
         res.download(internalFilePath, path.basename(internalFilePath), (err) => {
             if (err) throw Error(err.message);
         });
