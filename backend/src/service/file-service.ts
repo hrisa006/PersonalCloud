@@ -100,7 +100,7 @@ export default class FileService {
 
         await this.removeFile(userId, req, false);
 
-        const result = await this.handleBusboyFileUpload(path.dirname(ownerId === '' ? userId : ownerId + '/' + reqFilePath), req);
+        const result = await this.handleBusboyFileUpload(path.dirname((ownerId === '' ? userId : ownerId) + '/' + reqFilePath), req);
         result.path = result.path.split('/').slice(1).join('/');
 
         await this.fileRepo.updateFile(req.query.filePath as string, ownerId === '' ? userId : ownerId, {
