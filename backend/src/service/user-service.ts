@@ -1,10 +1,12 @@
 import bcrypt from "bcrypt";
-import { UserRegisterDto } from "../dto/user-register-dto";
-import { UserLoginDto } from "../dto/user-login-dto";
-import { authRepository } from "../repository/auth-repository";
+import jwt from "jsonwebtoken";
+import {UserRegisterDto} from "../dto/user-register-dto";
+import {UserLoginDto} from "../dto/user-login-dto";
+import {authRepository} from "../repository/auth-repository";
+
+const JWT_SECRET = process.env.JWT_SECRET || "default-secret";
 
 class UserService {
-  private tokens = new Map<string, string>(); // token -> email
 
   async register(dto: UserRegisterDto): Promise<boolean> {
     try {
@@ -27,21 +29,68 @@ class UserService {
     if (!user) return null;
     const match = await bcrypt.compare(dto.password, user.password);
     if (!match) return null;
-    const token = `${dto.email}-${Date.now()}`;
-    this.tokens.set(token, dto.email);
-    return token;
+
+    return jwt.sign(
+        {userId: user.id, email: user.email},
+        JWT_SECRET
+    );
   }
 
   isValidToken(token: string): boolean {
-    return this.tokens.has(token);
+    try {
+      jwt.verify(token, JWT_SECRET);
+      return true;
+    } catch (err) {
+      return false;
+    }
   }
 
-  getEmailByToken(token: string): string | undefined {
-    return this.tokens.get(token);
+  getEmailByToken(token: string): string {
+    try {
+      const payload = jwt.verify(token, JWT_SECRET) as jwt.JwtPayload;
+
+      if (!payload.email) {
+        throw new Error("Token payload missing email");
+      }
+
+      return payload.email;
+    } catch (err) {
+      if (err instanceof jwt.TokenExpiredError) {
+        throw new Error("Token expired");
+      } else if (err instanceof jwt.JsonWebTokenError) {
+        throw new Error("Invalid token");
+      } else {
+        throw new Error("Token verification failed");
+      }
+    }
   }
 
-  async getUser(email: string) {
+  getUserIdByToken(token: string): string {
+    try {
+      const payload = jwt.verify(token, JWT_SECRET) as jwt.JwtPayload;
+
+      if (!payload.userId) {
+        throw new Error("Token payload missing userId");
+      }
+
+      return payload.userId;
+    } catch (err) {
+      if (err instanceof jwt.TokenExpiredError) {
+        throw new Error("Token expired");
+      } else if (err instanceof jwt.JsonWebTokenError) {
+        throw new Error("Invalid token");
+      } else {
+        throw new Error("Token verification failed");
+      }
+    }
+  }
+
+  async getUserByEmail(email: string) {
     return authRepository.findUserByEmail(email);
+  }
+
+  async getUserById(id: string) {
+    return authRepository.findUserById(id);
   }
 }
 
