@@ -15,7 +15,7 @@ const ERROR = 'error';
 
 export default class FileService {
     private fileRepo: FileRepository;
-    private static DEFAULT_USER_ID = 'f3844740-6e57-49ed-80f8-8adf16970bc8'; // You may replace this with actual auth later
+    private static DEFAULT_USER_ID = 'f3844740-6e57-49ed-80f8-8adf16970bc8';
 
     constructor() {
         this.fileRepo = new FileRepository();
