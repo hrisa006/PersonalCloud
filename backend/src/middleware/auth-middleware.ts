@@ -10,10 +10,12 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction) 
     if (!token || !userService.isValidToken(token)) {  
         return res.status(401).json({ message: "Invalid token" });
     }
-    const email = userService.getEmailByToken(token);  
-    if (!email) {
+    const email = userService.getEmailByToken(token);
+    const userId = userService.getUserIdByToken(token);
+    if (!email || !userId) {
         return res.status(401).json({ message: "Invalid token" });
     }
-    (req as any).userEmail = email;  
+    (req as any).userEmail = email;
+    (req as any).userId = userId;
     next();
 }

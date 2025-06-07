@@ -15,21 +15,20 @@ const ERROR = 'error';
 
 export default class FileService {
     private fileRepo: FileRepository;
-    private static DEFAULT_USER_ID = 'f3844740-6e57-49ed-80f8-8adf16970bc8';
 
     constructor() {
         this.fileRepo = new FileRepository();
     }
 
-    public async fileUpload(req: Request): Promise<FileUploadResponseDto> {
+    public async fileUpload(userId: string, req: Request): Promise<FileUploadResponseDto> {
         const reqFilePath = req.query.filePath as string ?? '';
-        const userId = FileService.DEFAULT_USER_ID;
 
-        this.validatePath(reqFilePath)
+        this.validatePath(reqFilePath);
 
         const result = await this.handleBusboyFileUpload(userId + '/' + reqFilePath, req);
 
         result.path = result.path.split('/').slice(1).join('/');
+
         await this.fileRepo.createFile({
             userId,
             path: result.path,
@@ -41,25 +40,28 @@ export default class FileService {
         return result;
     }
 
-    public getFilePath(req: Request): string {
+    public async getFilePath(userId: string, req: Request): Promise<string> {
         const reqFilePath = req.query.filePath as string ?? '';
-        const userId = FileService.DEFAULT_USER_ID;
+        await this.assertCanReadFile(userId, reqFilePath);
+
         const internalFilePath = path.join(this.getRootPath(), STORAGE_DIR, userId, reqFilePath);
 
         if (!fs.existsSync(internalFilePath))
             throw new BadRequestError('File does not exist');
-        this.validatePath(reqFilePath)
+
+        this.validatePath(reqFilePath);
 
         return internalFilePath;
     }
 
-    public async updateFile(req: Request): Promise<FileUploadResponseDto> {
+    public async updateFile(userId: string, req: Request): Promise<FileUploadResponseDto> {
         const reqFilePath = req.query.filePath as string ?? '';
-        const userId = FileService.DEFAULT_USER_ID;
 
-        this.validatePath(reqFilePath)
+        this.validatePath(reqFilePath);
 
-        await this.removeFile(req, false);
+        await this.assertCanWriteFile(userId, reqFilePath);
+
+        await this.removeFile(userId, req, false);
 
         const result = await this.handleBusboyFileUpload(path.dirname(userId + '/' + reqFilePath), req);
         result.path = result.path.split('/').slice(1).join('/');
@@ -72,18 +74,21 @@ export default class FileService {
         return result;
     }
 
-    public async removeFile(req: Request, deleteFromDb: Boolean = true): Promise<void> {
+    public async removeFile(userId: string, req: Request, deleteFromDb: boolean = true): Promise<void> {
         const reqFilePath = req.query.filePath as string ?? '';
-        const userId = FileService.DEFAULT_USER_ID;
+
+        await this.assertCanWriteFile(userId, reqFilePath);
+
         const internalFilePath = path.join(this.getRootPath(), STORAGE_DIR, userId, reqFilePath);
 
         if (!fs.existsSync(internalFilePath))
             throw new BadRequestError('File does not exist');
-        this.validatePath(reqFilePath)
+
+        this.validatePath(reqFilePath);
 
         fs.rmSync(internalFilePath);
 
-        if(deleteFromDb)
+        if (deleteFromDb)
             await this.fileRepo.deleteFile(reqFilePath, userId);
     }
 
@@ -92,8 +97,8 @@ export default class FileService {
         return this.buildFileTree(files);
     }
 
-    public async shareFileWithUser(req: Request): Promise<SharedFiles> {
-        const { filePath, ownerId, userId, permission } = req.body;
+    public async shareFileWithUser(ownerId: string, req: Request): Promise<SharedFiles> {
+        const { filePath, userId, permission } = req.body;
 
         this.validatePath(filePath);
         this.validateUserId(ownerId);
@@ -103,16 +108,14 @@ export default class FileService {
         return this.fileRepo.shareFileWithUser(filePath, ownerId, userId, permission);
     }
 
-    public async getFilesSharedWithUser(req: Request): Promise<File[]> {
-        const userId = req.header('x-user-id');
+    public async getFilesSharedWithUser(userId: string): Promise<File[]> {
         this.validateUserId(userId);
 
-        return this.fileRepo.getFilesSharedWithUser(userId!);
+        return this.fileRepo.getFilesSharedWithUser(userId);
     }
 
-    public async getUsersFileIsSharedWith(req: Request): Promise<Users[]> {
+    public async getUsersFileIsSharedWith(ownerId: string, req: Request): Promise<Users[]> {
         const filePath = req.query.filePath as string ?? '';
-        const ownerId = req.query.ownerId as string ?? '';
 
         this.validatePath(filePath);
         this.validateUserId(ownerId);
@@ -120,8 +123,8 @@ export default class FileService {
         return this.fileRepo.getUsersFileIsSharedWith(filePath, ownerId);
     }
 
-    public async updateSharedPermission(req: Request): Promise<SharedFiles> {
-        const { filePath, ownerId, userId, permission } = req.body;
+    public async updateSharedPermission(ownerId: string, req: Request): Promise<SharedFiles> {
+        const { filePath, userId, permission } = req.body;
 
         this.validatePath(filePath);
         this.validateUserId(ownerId);
@@ -131,8 +134,8 @@ export default class FileService {
         return this.fileRepo.updateSharedPermission(filePath, ownerId, userId, permission);
     }
 
-    public async unshareFile(req: Request): Promise<SharedFiles> {
-        const { filePath, ownerId, userId } = req.body;
+    public async unshareFile(ownerId: string, req: Request): Promise<SharedFiles> {
+        const { filePath, userId } = req.body;
 
         this.validatePath(filePath);
         this.validateUserId(ownerId);
@@ -141,16 +144,43 @@ export default class FileService {
         return this.fileRepo.unshareFile(filePath, ownerId, userId);
     }
 
-    public async getUserFilePermission(req: Request): Promise<SharedFiles | null> {
+    public async getUserFilePermission(ownerId: string, req: Request): Promise<SharedFiles | null> {
         const filePath = req.query.filePath as string ?? '';
-        const ownerId = req.query.ownerId as string ?? '';
-        const userId = req.header('x-user-id');
+        const userId = (req as any).userId;
 
         this.validatePath(filePath);
         this.validateUserId(ownerId);
         this.validateUserId(userId);
 
         return this.fileRepo.getUserFilePermission(filePath, ownerId, userId!);
+    }
+
+    private async assertCanReadFile(userId: string, filePath: string): Promise<void> {
+        this.validateUserId(userId);
+        this.validatePath(filePath);
+
+        if (await this.fileRepo.userOwnsFile(userId, filePath)) {
+            return;
+        }
+
+        const permission = await this.fileRepo.getUserFilePermission(filePath, userId, userId);
+        if (!permission || (permission.permissions !== PermissionType.READ && permission.permissions !== PermissionType.WRITE)) {
+            throw new BadRequestError('User does not have read permission for this file');
+        }
+    }
+
+    private async assertCanWriteFile(userId: string, filePath: string): Promise<void> {
+        this.validateUserId(userId);
+        this.validatePath(filePath);
+
+        if (await this.fileRepo.userOwnsFile(userId, filePath)) {
+            return;
+        }
+
+        const permission = await this.fileRepo.getUserFilePermission(filePath, userId, userId);
+        if (!permission || permission.permissions !== PermissionType.WRITE) {
+            throw new BadRequestError('User does not have write permission for this file');
+        }
     }
 
     private validateUserId(userId: string | undefined): void {
