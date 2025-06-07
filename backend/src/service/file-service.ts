@@ -4,10 +4,10 @@ import { Request } from 'express';
 import busboy from 'busboy';
 import { BadRequestError } from '../errors/bad-request-error';
 import { FileRepository } from '../repository/file-repository';
-import { PermissionType, File, SharedFiles, Users } from '../generated/prisma';
+import { File, SharedFiles, Users, PermissionType } from '@prisma/client';
 
 const DIR_BACK_LEVELS = 3;
-const STORAGE_DIR = 'uploads';
+const STORAGE_DIR = 'tmp/uploads';
 const FINISH = 'finish';
 const FILE = 'file';
 const CLOSE = 'close';
