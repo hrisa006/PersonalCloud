@@ -18,6 +18,21 @@ export const fileUpload = async (req: Request, res: Response, next: NextFunction
     }
 };
 
+export const createFolder = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const userId = (req as any).userId;
+        if (!userId) {
+            return res.status(401).json({ message: 'Unauthorized' });
+        }
+
+        await fileService.createFolder(userId, req);
+
+        res.status(201).send('Folder created successfully');
+    } catch (err) {
+        return next(err);
+    }
+};
+
 export const fileUpdate = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const userId = (req as any).userId;

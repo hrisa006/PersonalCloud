@@ -40,6 +40,28 @@ export default class FileService {
         return result;
     }
 
+    public async createFolder(userId: string, req: Request): Promise<void> {
+        const reqFolderPath = req.query.folderPath as string ?? '';
+
+        this.validatePath(reqFolderPath);
+
+        const folderInternalPath = path.join(this.getRootPath(), STORAGE_DIR, userId, reqFolderPath);
+
+        if (fs.existsSync(folderInternalPath)) {
+            throw new BadRequestError('Folder already exists');
+        }
+
+        fs.mkdirSync(folderInternalPath, { recursive: true });
+
+        await this.fileRepo.createFile({
+            userId,
+            path: reqFolderPath,
+            fileType: 'folder',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+    }
+
     /*
      * If the ownerId is passed as part of the request we are treating the file as shared
      * All operations like getting the file path or reading from the db are done with the ownerId in this case.
