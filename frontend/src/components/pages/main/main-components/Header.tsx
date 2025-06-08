@@ -10,7 +10,7 @@ export default function Header() {
   const handleCreateFolder = async () => {
     const token = localStorage.getItem("token");
     if (!token) {
-      message.error("You must be logged in.");
+      message.error("Трябва да сте влезли в профила си.");
       return;
     }
 
@@ -21,14 +21,14 @@ export default function Header() {
     if (!currentPath) currentPath = "";
 
     const folderInput = window.prompt(
-      "Enter the folder path to create:",
+      "Въведете пътя до папката на създаване:",
       currentPath
     );
     if (!folderInput) return;
 
     try {
       await createFolder(folderInput);
-      message.success("Folder created successfully!");
+      message.success("Папката е създадена успешно!");
     } catch (err) {
       console.error("Error creating folder:", err);
     }

@@ -104,7 +104,7 @@ const FileList: React.FC<Props> = ({
           />
         ))}
         {itemsToRender.length === 0 && (
-          <li className="empty-message">No files found.</li>
+          <li className="empty-message">Няма намерени файлове.</li>
         )}
       </ul>
     </div>

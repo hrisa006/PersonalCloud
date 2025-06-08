@@ -27,10 +27,11 @@ const File: React.FC<FileProps> = ({ file, onClick, mode }) => {
   const [shareUserEmail, setShareUserEmail] = useState("");
   const [permission, setPermission] = useState<"READ" | "WRITE">("READ");
   const [isInfoVisible, setIsInfoVisible] = useState(false);
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
 
   const handleShareSubmit = async () => {
     if (!shareUserEmail) {
-      message.error("Please enter a user ID.");
+      message.error("Моля въведете име/имейл на потребител.");
       return;
     }
     try {
@@ -45,14 +46,14 @@ const File: React.FC<FileProps> = ({ file, onClick, mode }) => {
 
   const handleEditPath = async () => {
     const currentPath = file.path;
-    const newPath = window.prompt("Edit file path:", currentPath);
+    const newPath = window.prompt("Промяна на пътя на папката:", currentPath);
 
     if (!newPath || newPath === currentPath) return;
 
     try {
       const fileBlob = await fetchFileBlob(currentPath);
       await updateFilePath(currentPath, newPath, fileBlob);
-      message.success("File moved successfully!");
+      message.success("Файлът е преместен успешно!");
     } catch (err) {
       console.error("Failed to update file path:", err);
     }
@@ -62,7 +63,16 @@ const File: React.FC<FileProps> = ({ file, onClick, mode }) => {
     <li
       className="file-item"
       onClick={(e) => {
-        if ((e.target as HTMLElement).closest("button")) return;
+        const target = e.target as HTMLElement;
+
+        if (
+          target.closest(".modal-backdrop") ||
+          target.closest(".file-buttons") ||
+          target.closest("button")
+        ) {
+          return;
+        }
+
         onClick?.();
       }}
     >
@@ -101,10 +111,10 @@ const File: React.FC<FileProps> = ({ file, onClick, mode }) => {
             >
               <FiDownload />
             </button>
-            {(!file.permission || file.permission === "WRITE") && (
+            {(!file.permissions || file.permissions === "WRITE") && (
               <button
                 title="Delete"
-                onClick={() => deleteFile(file.path, file.owner?.id)}
+                onClick={() => setIsConfirmingDelete(true)}
               >
                 <ImBin />
               </button>
@@ -119,10 +129,10 @@ const File: React.FC<FileProps> = ({ file, onClick, mode }) => {
       {isSharing && (
         <div className="modal-backdrop">
           <div className="share-modal">
-            <h4>Share "{file.name}"</h4>
+            <h4>Споделяне на "{file.name}"</h4>
             <input
               type="text"
-              placeholder="User Email"
+              placeholder="Добавяне на човек"
               value={shareUserEmail}
               onChange={(e) => setShareUserEmail(e.target.value)}
             />
@@ -132,12 +142,33 @@ const File: React.FC<FileProps> = ({ file, onClick, mode }) => {
                 setPermission(e.target.value as "READ" | "WRITE")
               }
             >
-              <option value="READ">Read</option>
-              <option value="WRITE">Write</option>
+              <option value="READ">Обикновен потребител</option>
+              <option value="WRITE">Редактор</option>
             </select>
             <div className="modal-actions">
-              <button onClick={handleShareSubmit}>Share</button>
-              <button onClick={() => setIsSharing(false)}>Cancel</button>
+              <button onClick={handleShareSubmit}>Споделяне</button>
+              <button onClick={() => setIsSharing(false)}>Отказ</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isConfirmingDelete && (
+        <div className="modal-backdrop">
+          <div className="share-modal">
+            <h4>Наистина ли искате да изтриете файла "{file.name}"?</h4>
+            <div className="modal-actions">
+              <button
+                onClick={() => {
+                  deleteFile(file.path, file.owner?.id);
+                  setIsConfirmingDelete(false);
+                }}
+              >
+                Изтриване
+              </button>
+              <button onClick={() => setIsConfirmingDelete(false)}>
+                Отказ
+              </button>
             </div>
           </div>
         </div>
@@ -146,34 +177,46 @@ const File: React.FC<FileProps> = ({ file, onClick, mode }) => {
       {isInfoVisible && (
         <div className="modal-backdrop">
           <div className="share-modal">
-            <h4 style={{ fontSize: "20px" }}>File Info</h4>
+            <h4
+              style={{
+                fontSize: "20px",
+                color: "var(--color-accent)",
+                margin: "15px 0",
+              }}
+            >
+              Информация за файл
+            </h4>
             <p>
-              <strong>Name:</strong> {file.name}
+              <strong>Име:</strong> {file.name}
             </p>
             <p>
-              <strong>Owner:</strong>{" "}
-              {mode === "shared" ? file.owner?.name : "me"}
+              <strong>Собственик:</strong>{" "}
+              {mode === "shared" ? file.owner?.name : "мен"}
             </p>
             <p>
-              <strong>Permission:</strong>{" "}
-              {mode === "shared" ? file.permission?.toLowerCase() : "owner"}
+              <strong>Достъп:</strong>{" "}
+              {mode === "shared"
+                ? file.permissions === "READ"
+                  ? "обикновен потребител"
+                  : "редактор"
+                : "собственик"}
             </p>
             <p>
-              <strong>Type:</strong> {file.type}
+              <strong>Тип:</strong> {file.type}
             </p>
             <p>
-              <strong>Path:</strong> {file.path}
+              <strong>Местоположение:</strong> {file.path}
             </p>
             <p>
-              <strong>Created:</strong>{" "}
-              {file.createdAt ? new Date(file.createdAt).toLocaleString() : "-"}
-            </p>
-            <p>
-              <strong>Updated:</strong>{" "}
+              <strong>Променено:</strong>{" "}
               {file.updatedAt ? new Date(file.updatedAt).toLocaleString() : "-"}
             </p>
+            <p>
+              <strong>Създадено:</strong>{" "}
+              {file.createdAt ? new Date(file.createdAt).toLocaleString() : "-"}
+            </p>
             <div className="modal-actions">
-              <button onClick={() => setIsInfoVisible(false)}>Close</button>
+              <button onClick={() => setIsInfoVisible(false)}>Отказ</button>
             </div>
           </div>
         </div>

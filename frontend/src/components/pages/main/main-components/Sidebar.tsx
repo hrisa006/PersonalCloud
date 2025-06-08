@@ -35,7 +35,7 @@ const Sidebar: React.FC<SidebarProps> = ({ mode, setMode }) => {
 
     try {
       await uploadFile(file, currentPath);
-      message.success("File uploaded successfully!");
+      message.success("Файлът е качен успешно!");
     } catch (err) {
       console.error("Upload failed:", err);
     } finally {

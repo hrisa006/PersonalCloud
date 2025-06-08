@@ -153,7 +153,6 @@ export default class FileService {
             throw new BadRequestError("User with this email couldn't be found");
         if (user.id === ownerId)
             throw new BadRequestError("User can't share a file with himself");
-        console.log(user.id);
         return this.fileRepo.shareFileWithUser(filePath, ownerId, user.id, permission);
     }
 

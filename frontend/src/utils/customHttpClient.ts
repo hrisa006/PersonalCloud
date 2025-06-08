@@ -20,7 +20,7 @@ export async function customHttpRequest<T>(
       return text as unknown as T;
     }
   } catch (err: any) {
-    message.error(`Request failed: ${err.message}`);
+    message.error(`Неуспешна заявка: ${err.message}`);
     throw err;
   }
 }
@@ -34,7 +34,7 @@ export async function customHttpBlobRequest(
     if (!res.ok) throw new Error(`HTTP Error ${res.status}`);
     return await res.blob();
   } catch (err: any) {
-    message.error(`Request failed: ${err.message}`);
+    message.error(`Неуспешна заявка: ${err.message}`);
     throw err;
   }
 }

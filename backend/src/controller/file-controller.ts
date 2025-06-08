@@ -39,7 +39,6 @@ export const fileUpdate = async (req: Request, res: Response, next: NextFunction
         if (!userId) {
             return res.status(401).json({ message: 'Unauthorized' });
         }
-        console.log(userId)
         const updateResult = await fileService.updateFile(userId, req);
 
         return res.status(200).json(updateResult);

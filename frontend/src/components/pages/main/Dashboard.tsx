@@ -73,7 +73,7 @@ export default function Dashboard() {
         console.error("Failed to fetch file content:", err);
         setOpenedFile({
           name: file.name,
-          content: "⚠️ Failed to load file content.",
+          content: "Failed to load file content.",
           type: "error",
         });
       }
@@ -93,7 +93,7 @@ export default function Dashboard() {
         <Header />
         {isLoading ? (
           <p style={{ textAlign: "center", color: "#999", marginTop: "250px" }}>
-            Loading files...
+            Зареждане на файлове...
           </p>
         ) : (
           <FileList
@@ -117,39 +117,44 @@ export default function Dashboard() {
           />
         )}
 
-          <Modal
-              open={!!openedFile}
-              onCancel={handleCloseFile}
-              onOk={handleCloseFile}
-              title={openedFile?.name}
-              width={800}
-          >
-            {openedFile?.type?.startsWith("image/") ? (
-                <img
-                    src={openedFile.content}
-                    alt={openedFile.name}
-                    style={{ maxWidth: "100%", maxHeight: "600px", display: "block", margin: "auto" }}
-                />
-            ) : openedFile?.type === "application/pdf" ? (
-                <iframe
-                    src={openedFile.content}
-                    width="100%"
-                    height="600px"
-                    style={{ border: "none" }}
-                ></iframe>
-            ) : openedFile?.type?.startsWith("text/") ||
+        <Modal
+          open={!!openedFile}
+          onCancel={handleCloseFile}
+          title={openedFile?.name}
+          width={800}
+          footer={null}
+        >
+          {openedFile?.type?.startsWith("image/") ? (
+            <img
+              src={openedFile.content}
+              alt={openedFile.name}
+              style={{
+                maxWidth: "100%",
+                maxHeight: "600px",
+                display: "block",
+                margin: "auto",
+              }}
+            />
+          ) : openedFile?.type === "application/pdf" ? (
+            <iframe
+              src={openedFile.content}
+              width="100%"
+              height="600px"
+              style={{ border: "none" }}
+            ></iframe>
+          ) : openedFile?.type?.startsWith("text/") ||
             openedFile?.type === "application/json" ||
             openedFile?.type === "application/xml" ||
             openedFile?.type === "application/javascript" ? (
-                <pre style={{ whiteSpace: "pre-wrap" }}>{openedFile.content}</pre>
-            ) : (
-                <p>
-                  <a href={openedFile?.content} download={openedFile?.name}>
-                    Download file
-                  </a>
-                </p>
-            )}
-          </Modal>
+            <pre style={{ whiteSpace: "pre-wrap" }}>{openedFile.content}</pre>
+          ) : (
+            <p>
+              <a href={openedFile?.content} download={openedFile?.name}>
+                Download file
+              </a>
+            </p>
+          )}
+        </Modal>
       </main>
     </div>
   );

@@ -9,7 +9,6 @@ import { API_BASE_URL } from "../utils/constants";
 export interface FileOwner {
   id: string;
   name: string;
-  email: string;
 }
 
 export interface FileItem {
@@ -20,7 +19,7 @@ export interface FileItem {
   updatedAt: string;
   path: string;
   owner?: FileOwner;
-  permission?: "READ" | "WRITE";
+  permissions?: "READ" | "WRITE";
   items?: FileItem[];
 }
 
@@ -48,10 +47,7 @@ interface FileSystemContextProps {
     file: File
   ) => Promise<void>;
   fetchFileBlob: (filePath: string) => Promise<File>;
-  getFile: (
-      filePath: string,
-      ownerId?: string
-  ) => Promise<Blob>;
+  getFile: (filePath: string, ownerId?: string) => Promise<Blob>;
 }
 
 const FileSystemContext = createContext<FileSystemContextProps | undefined>(
@@ -109,7 +105,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({
       updatedAt: file.updatedAt,
       path: file.path,
       owner: file.owner,
-      permission: file.permission,
+      permissions: file.permissions,
     }));
 
     setSharedFiles(processedData);
@@ -125,7 +121,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({
       `${API_BASE_URL}/file?filePath=${encodeURIComponent(currentPath)}`,
       {
         method: "POST",
-        headers: {Authorization: `Bearer ${token}`},
+        headers: { Authorization: `Bearer ${token}` },
         body: formData,
       }
     );
@@ -161,7 +157,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({
   ) => {
     const token = getToken();
     if (!token) {
-      message.error("You must be logged in to download.");
+      message.error("Трябва да влезете в профила си, за да изтеглите.");
       return;
     }
 
@@ -204,9 +200,9 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({
 
     return await customHttpBlobRequest(url.toString(), {
       method: "GET",
-      headers: {Authorization: `Bearer ${token}`},
+      headers: { Authorization: `Bearer ${token}` },
     });
-  }
+  };
 
   const deleteFile = async (filePath: string, ownerId?: string) => {
     const token = getToken();
@@ -247,7 +243,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({
       body: JSON.stringify({ filePath, userEmail, permission }),
     });
 
-    message.success("File shared successfully!");
+    message.success("Файлът е споделен успешно!");
   };
 
   const updateFilePath = async (
