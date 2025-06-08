@@ -195,6 +195,14 @@ export default class FileService {
     return this.buildFileTree(files);
   }
 
+  public async searchFiles(
+    userId: string,
+    fileName: string
+  ): Promise<FileItemDto> {
+    const files = await this.fileRepo.searchFilesByName(fileName, userId);
+    return this.buildFileTree(files);
+  }
+
   public async shareFileWithUser(
     ownerId: string,
     req: Request

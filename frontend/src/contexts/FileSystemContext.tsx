@@ -293,7 +293,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({
   const searchFiles = async (query: string) => {
     const token = getToken();
     if (!token) return;
-    
+
     const res = await customHttpRequest<FileItem>(
       `${API_BASE_URL}/file/search?fileName=${encodeURIComponent(query)}`,
       {
@@ -302,10 +302,10 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({
         },
       }
     );
-    
+
     setFileTree(res);
+    message.success("Файловете са намерени успешно!");
   };
-    
 
   useEffect(() => {
     const token = getToken();
