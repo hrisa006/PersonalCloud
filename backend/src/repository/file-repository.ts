@@ -57,7 +57,7 @@ export class FileRepository {
       }
     });
 
-    return shared.map((s) => s.file!);
+    return shared.map(s => ({...s.file, permissions: s.permissions}));
   }
 
   async getUsersFileIsSharedWith(filePath: string, ownerId: string): Promise<Users[]> {
