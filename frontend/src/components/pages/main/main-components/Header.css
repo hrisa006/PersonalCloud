@@ -1,0 +1,26 @@
+.header {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  margin-top: 16.6px;
+}
+
+.searchbar {
+  width: 100%;
+  max-width: 500px;
+}
+
+.add-folder-btn {
+  margin-bottom: 1.5rem;
+  padding: 10px;
+  font-size: 14px;
+  color: var(--color-white);
+  background-color: var(--color-accent);
+  border: none;
+  border-radius: 15px;
+  cursor: pointer;
+}
+
+.add-folder-btn:hover {
+  background-color: var(--color-accentHover);
+}

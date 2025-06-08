@@ -1,6 +1,5 @@
-.dashboard-container {
-  display: flex;
-  height: 100vh;
-  background-color: #f1f3f4;
-  font-family: 'Segoe UI', Roboto, sans-serif;
+main {
+  width: 100%;
+  /* background-color: red; */
+  padding: 1rem;
 }

@@ -1,10 +1,10 @@
 import React from "react";
+
 import {
   FileItem,
   useFileSystem,
 } from "../../../../contexts/FileSystemContext";
 import File from "./File";
-
 import "./FileList.css";
 
 interface Props {
@@ -80,6 +80,10 @@ const FileList: React.FC<Props> = ({
               <button onClick={() => handlePathClick(index)}>{folder}</button>
             </span>
           ))}
+      </div>
+
+      <div>
+        
       </div>
 
       <ul className="file-list">

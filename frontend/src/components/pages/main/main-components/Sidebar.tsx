@@ -1,7 +1,10 @@
-import React, { useState } from "react";
+import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+
 import { useFileSystem } from "../../../../contexts/FileSystemContext";
+import { FiLogOut } from "react-icons/fi";
 import "./Sidebar.css";
+
 interface SidebarProps {
   mode: "mydrive" | "shared";
   setMode: (mode: "mydrive" | "shared") => void;
@@ -30,13 +33,13 @@ const Sidebar: React.FC<SidebarProps> = ({ mode, setMode }) => {
     if (!file) return;
 
     try {
-      await uploadFile(file, currentPath); // use context
+      await uploadFile(file, currentPath);
       alert("File uploaded successfully!");
     } catch (err) {
       console.error("Upload failed:", err);
       alert("Failed to upload file.");
     } finally {
-      e.target.value = ""; // allow re-uploading same file
+      e.target.value = "";
     }
   };
 
@@ -48,13 +51,12 @@ const Sidebar: React.FC<SidebarProps> = ({ mode, setMode }) => {
   return (
     <aside className="sidebar">
       <div className="sidebar-content">
-        <h2 className="logo">🌐 MyCloud</h2>
-
+        <h2 className="logo">Личен Облак</h2>
         <button
           className="upload-btn"
           onClick={() => document.getElementById("fileInput")?.click()}
         >
-          ⬆️ Upload
+          + Качване
         </button>
         <input
           type="file"
@@ -62,25 +64,23 @@ const Sidebar: React.FC<SidebarProps> = ({ mode, setMode }) => {
           style={{ display: "none" }}
           onChange={handleFileUpload}
         />
-
         <nav className="nav-buttons">
           <button
             className={isActive("mydrive") ? "active" : ""}
             onClick={() => changeMode("mydrive")}
           >
-            📁 My Drive
+            Моят Облак
           </button>
           <button
             className={isActive("shared") ? "active" : ""}
             onClick={() => changeMode("shared")}
           >
-            🤝 Shared
+            Споделени
           </button>
         </nav>
-
-        <div className="spacer" />
         <button className="logout-btn" onClick={handleLogout}>
-          🚪 Logout
+          <FiLogOut />
+          Изход
         </button>
       </div>
     </aside>

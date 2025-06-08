@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+
 import {
   FileItem,
   useFileSystem,
@@ -7,6 +8,7 @@ import { FaUserPlus } from "react-icons/fa6";
 import { FiDownload } from "react-icons/fi";
 import { ImBin } from "react-icons/im";
 import { IoMdInformationCircle } from "react-icons/io";
+import { FaEdit } from "react-icons/fa";
 import "./File.css";
 
 interface FileProps {
@@ -45,7 +47,7 @@ const File: React.FC<FileProps> = ({ file, onClick, mode }) => {
 
     try {
       const fileBlob = await fetchFileBlob(currentPath);
-      await updateFilePath(newPath, fileBlob);
+      await updateFilePath(currentPath, newPath, fileBlob);
       alert("File moved successfully!");
     } catch (err) {
       console.error("Failed to update file path:", err);
@@ -75,7 +77,9 @@ const File: React.FC<FileProps> = ({ file, onClick, mode }) => {
                 <button title="Share" onClick={() => setIsSharing(true)}>
                   <FaUserPlus />
                 </button>
-                <button onClick={handleEditPath}>Edit</button>
+                <button onClick={handleEditPath}>
+                  <FaEdit />
+                </button>
               </>
             )}
             <button

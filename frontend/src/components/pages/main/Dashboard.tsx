@@ -4,7 +4,6 @@ import { useLocation, useNavigate } from "react-router-dom";
 import Sidebar from "./main-components/Sidebar";
 import Header from "./main-components/Header";
 import FileList from "./main-components/FileList";
-
 import "./Dashboard.css";
 
 import { useFileSystem } from "../../../contexts/FileSystemContext";
@@ -48,9 +47,9 @@ export default function Dashboard() {
   const isLoading = mode === "shared" ? !sharedFiles : !fileTree;
 
   return (
-    <div style={{ display: "flex" }}>
+    <div style={{ display: "flex", width: "100%" }}>
       <Sidebar mode={mode} setMode={setMode} />
-      <main style={{ flexGrow: 1, padding: "1rem" }}>
+      <main>
         <Header />
         {isLoading ? (
           <p>Loading files...</p>

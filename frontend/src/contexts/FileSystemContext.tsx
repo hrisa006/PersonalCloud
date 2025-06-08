@@ -36,7 +36,11 @@ interface FileSystemContextProps {
     userEmail: string,
     permission: "READ" | "WRITE"
   ) => Promise<void>;
-  updateFilePath: (newPath: string, file: File) => Promise<void>;
+  updateFilePath: (
+    currentPath: string,
+    newPath: string,
+    file: File
+  ) => Promise<void>;
   fetchFileBlob: (filePath: string) => Promise<File>;
 }
 
@@ -242,23 +246,28 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-
-  const updateFilePath = async (newPath: string, file: File) => {
+  const updateFilePath = async (
+    currentPath: string,
+    newPath: string,
+    file: File
+  ) => {
     if (!token) return;
+
     const formData = new FormData();
     formData.append("file", file);
 
     try {
-      const res = await fetch(
-        `http://localhost:8081/file?filePath=${encodeURIComponent(newPath)}`,
-        {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          body: formData,
-        }
-      );
+      const url = new URL("http://localhost:8081/file");
+      url.searchParams.append("filePath", currentPath);
+      url.searchParams.append("newPath", newPath);
+
+      const res = await fetch(url.toString(), {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
 
       if (!res.ok) throw new Error("Failed to update file path");
 
@@ -271,17 +280,21 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const fetchFileBlob = async (filePath: string): Promise<File> => {
     if (!token) throw new Error("Not authenticated");
-    const res = await fetch(`http://localhost:8081/file?filePath=${encodeURIComponent(filePath)}`, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    const res = await fetch(
+      `http://localhost:8081/file?filePath=${encodeURIComponent(filePath)}`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
     if (!res.ok) throw new Error("Failed to fetch file blob");
     const blob = await res.blob();
-    return new File([blob], filePath.split("/").pop() || "file", { type: blob.type });
+    return new File([blob], filePath.split("/").pop() || "file", {
+      type: blob.type,
+    });
   };
-
 
   useEffect(() => {
     if (token) fetchTree();
