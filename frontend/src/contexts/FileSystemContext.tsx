@@ -48,6 +48,7 @@ interface FileSystemContextProps {
   ) => Promise<void>;
   fetchFileBlob: (filePath: string) => Promise<File>;
   getFile: (filePath: string, ownerId?: string) => Promise<Blob>;
+  searchFiles: (query: string) => Promise<void>;
 }
 
 const FileSystemContext = createContext<FileSystemContextProps | undefined>(
@@ -289,6 +290,23 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({
     });
   };
 
+  const searchFiles = async (query: string) => {
+    const token = getToken();
+    if (!token) return;
+    
+    const res = await customHttpRequest<FileItem>(
+      `${API_BASE_URL}/file/search?fileName=${encodeURIComponent(query)}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    
+    setFileTree(res);
+  };
+    
+
   useEffect(() => {
     const token = getToken();
     if (token) fetchTree();
@@ -309,6 +327,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({
         updateFilePath,
         fetchFileBlob,
         getFile,
+        searchFiles,
       }}
     >
       {children}
