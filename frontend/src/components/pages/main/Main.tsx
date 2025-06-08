@@ -1,17 +1,16 @@
-// App.tsx or Main.tsx
-import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
+import { FileSystemProvider } from "../../../contexts/FileSystemContext";
 import Dashboard from "./Dashboard";
 
 function Main() {
   return (
-
+    <FileSystemProvider>
       <Routes>
         <Route path="/*" element={<Dashboard />} />
         <Route path="/shared/*" element={<Dashboard />} />
-        {/* Add "/search" later if needed */}
+        {/* TODO Search */}
       </Routes>
-
+    </FileSystemProvider>
   );
 }
 

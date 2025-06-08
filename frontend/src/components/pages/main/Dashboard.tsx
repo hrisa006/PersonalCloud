@@ -1,33 +1,42 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import Sidebar from "./main-components/Sidebar";
-import FileList from "./main-components/FileList";
-import { fileSystem } from "../../../constants/fileSystem";
-import './Dashboard.css'
 
+import Sidebar from "./main-components/Sidebar";
+import Header from "./main-components/Header";
+import FileList from "./main-components/FileList";
+
+import "./Dashboard.css";
+
+import { useFileSystem } from "../../../contexts/FileSystemContext";
 
 export default function Dashboard() {
   const location = useLocation();
   const navigate = useNavigate();
   const pathname = location.pathname;
 
-  // Strip base and extract path
+  const { fileTree, sharedFiles, fetchSharedFiles } = useFileSystem();
+
+  const isShared = pathname.startsWith("/shared");
   const segments = pathname
     .replace(/^\/(my-cloud|shared)/, "")
     .split("/")
     .filter(Boolean);
 
-  const isShared = pathname.startsWith("/shared");
   const [mode, setMode] = useState<"mydrive" | "shared">(
     isShared ? "shared" : "mydrive"
   );
   const [path, setPath] = useState<string[]>(segments);
 
-  // Sync mode + path with URL changes
   useEffect(() => {
     setMode(isShared ? "shared" : "mydrive");
     setPath(segments);
   }, [pathname]);
+
+  useEffect(() => {
+    if (mode === "shared") {
+      fetchSharedFiles();
+    }
+  }, [mode]);
 
   const handlePathChange = (newPath: string[]) => {
     setPath(newPath);
@@ -36,17 +45,36 @@ export default function Dashboard() {
     navigate(newUrl);
   };
 
+  const isLoading = mode === "shared" ? !sharedFiles : !fileTree;
+
   return (
     <div style={{ display: "flex" }}>
       <Sidebar mode={mode} setMode={setMode} />
       <main style={{ flexGrow: 1, padding: "1rem" }}>
-        <FileList
-          root={fileSystem}
-          mode={mode}
-          path={path}
-          onPathChange={handlePathChange}
-          sharedWithUser="me"
-        />
+        <Header />
+        {isLoading ? (
+          <p>Loading files...</p>
+        ) : (
+          <FileList
+            root={
+              mode === "shared"
+                ? {
+                    name: "Shared Root",
+                    type: "folder",
+                    ext: "",
+                    createdAt: "",
+                    updatedAt: "",
+                    path: "",
+                    items: sharedFiles ?? [],
+                  }
+                : fileTree!
+            }
+            mode={mode}
+            path={path}
+            onPathChange={handlePathChange}
+            sharedWithUser="me"
+          />
+        )}
       </main>
     </div>
   );

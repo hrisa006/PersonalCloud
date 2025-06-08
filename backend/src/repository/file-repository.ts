@@ -63,18 +63,13 @@ export class FileRepository {
     const shared = await this.prisma.sharedFiles.findMany({
       where: { userId },
       include: {
-        file: {
-          include: {
-            owner: {
+        file: {include: {owner: {
               select: {
-                id: true,
-                name: true,
-                email: true,
-              },
-            },
-          },
-        },
-      },
+                id: true, name: true, email: true }
+            }
+          }
+        }
+      }
     });
 
     return shared.map((s) => s.file!);
