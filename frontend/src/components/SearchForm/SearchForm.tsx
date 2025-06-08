@@ -12,19 +12,20 @@ const SearchBar = () => {
   const validateSearchTerm = (searchTerm: string) => {
     if (!searchTerm.trim()) {
       fetchTree();
+      console.log("fetching tree");
       return false;
     }
 
     return true;
   };
 
-  const fetchFiles = async () => {
+  const fetchFiles = async (searchQuery: string) => {
     const isValid = validateSearchTerm(query);
 
     if (!isValid) return;
 
     try {
-      await searchFiles(query);
+      await searchFiles(searchQuery);
     } catch (err) {
       console.error("Search failed:", err);
       message.error("Неуспешно търсене");
@@ -40,7 +41,8 @@ const SearchBar = () => {
     }
 
     searchTimeoutRef.current = window.setTimeout(() => {
-      fetchFiles();
+      fetchFiles(newValue);
+      searchTimeoutRef.current = undefined;
     }, 1000);
   };
 
