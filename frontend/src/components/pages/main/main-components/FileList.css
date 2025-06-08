@@ -1,0 +1,53 @@
+.file-list-container {
+  padding: 20px;
+  border: 3px solid var(--color-accent);
+  border-radius: 5px;
+}
+
+.path-bar {
+  align-items: center;
+  font-size: 20px;
+}
+
+.path-bar button {
+  padding: 2px 8px;
+  background: none;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--color-black);
+  border: none;
+  cursor: pointer;
+}
+
+.path-bar button:hover {
+  background-color: var(--color-primary);
+  text-align: center;
+  border: none;
+  border-radius: 5px;
+}
+
+.file-labels {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  padding: 3px 8px;
+  border-bottom: 1px solid var(--color-accent);
+}
+
+.file-labels h3 {
+  font-size: 14px;
+  font-weight: 300;
+  color: var(--color-accent);
+}
+
+.file-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.empty-message {
+  padding: 2rem 0;
+  font-size: 14px;
+  color: #999;
+  text-align: center;
+}

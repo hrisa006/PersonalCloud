@@ -1,21 +1,32 @@
-// import { useEffect, useState } from "react";
-// import axios from "axios";
-// import { FaCloud } from "react-icons/fa";
-// import SearchBar from './components/SearchForm/SearchForm';
-import { Routes, Route, Navigate } from 'react-router-dom';
-import Login from './components/Login/Login';
-import Register from './components/Register/Register';
-import './App.css';
+import '@ant-design/v5-patch-for-react-19';
+import { useEffect } from "react";
+import { Routes, Route } from "react-router-dom";
+import PrivateRoute from "./components/routes/PrivateRoute";
 
-
+import Login from "./components/pages/login/Login";
+import Register from "./components/pages/register/Register";
+import Main from "./components/pages/main/Main";
+import { injectCssVariables } from "./styles/theme";
+import "./App.css";
 
 function App() {
+  useEffect(() => {
+    injectCssVariables();
+  }, []);
+
   return (
-    <div className="App">
+    <div className="app">
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/" element={<Navigate to="/login" replace />} />
+        <Route
+          path="/*"
+          element={
+            <PrivateRoute>
+              <Main />
+            </PrivateRoute>
+          }
+        />
       </Routes>
     </div>
   );

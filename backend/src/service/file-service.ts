@@ -4,6 +4,7 @@ import { Request } from 'express';
 import busboy from 'busboy';
 import { BadRequestError } from '../errors/bad-request-error';
 import { FileRepository } from '../repository/file-repository';
+import { authRepository } from '../repository/auth-repository';
 import { File, SharedFiles, Users, PermissionType } from '@prisma/client';
 
 const DIR_BACK_LEVELS = 3;
@@ -15,7 +16,6 @@ const ERROR = 'error';
 
 export default class FileService {
     private fileRepo: FileRepository;
-
     constructor() {
         this.fileRepo = new FileRepository();
     }
@@ -40,6 +40,28 @@ export default class FileService {
         return result;
     }
 
+    public async createFolder(userId: string, req: Request): Promise<void> {
+        const reqFolderPath = req.query.folderPath as string ?? '';
+
+        this.validatePath(reqFolderPath);
+
+        const folderInternalPath = path.join(this.getRootPath(), STORAGE_DIR, userId, reqFolderPath);
+
+        if (fs.existsSync(folderInternalPath)) {
+            throw new BadRequestError('Folder already exists');
+        }
+
+        fs.mkdirSync(folderInternalPath, { recursive: true });
+
+        await this.fileRepo.createFile({
+            userId,
+            path: reqFolderPath,
+            fileType: 'folder',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+    }
+
     /*
      * If the ownerId is passed as part of the request we are treating the file as shared
      * All operations like getting the file path or reading from the db are done with the ownerId in this case.
@@ -53,7 +75,6 @@ export default class FileService {
 
 
         const internalFilePath = this.getInternalFilePathByOwner(ownerId, userId, reqFilePath)
-
         if (!fs.existsSync(internalFilePath))
             throw new BadRequestError('File does not exist');
 
@@ -70,15 +91,16 @@ export default class FileService {
      */
     public async updateFile(userId: string, req: Request): Promise<FileUploadResponseDto> {
         const reqFilePath = req.query.filePath as string ?? '';
+        const newPath = req.query.newPath as string ?? '';
         const ownerId = req.query.ownerId as string ?? '';
 
         this.validatePath(reqFilePath);
+        this.validatePath(newPath);
 
         await this.assertCanWriteFile(userId, reqFilePath, ownerId);
-
         await this.removeFile(userId, req, false);
 
-        const result = await this.handleBusboyFileUpload(path.dirname(ownerId === '' ? userId : ownerId + '/' + reqFilePath), req);
+        const result = await this.handleBusboyFileUpload(path.dirname((ownerId === '' ? userId : ownerId) + '/' + newPath), req);
         result.path = result.path.split('/').slice(1).join('/');
 
         await this.fileRepo.updateFile(req.query.filePath as string, ownerId === '' ? userId : ownerId, {
@@ -120,14 +142,18 @@ export default class FileService {
     }
 
     public async shareFileWithUser(ownerId: string, req: Request): Promise<SharedFiles> {
-        const { filePath, userId, permission } = req.body;
+        const { filePath, userEmail, permission } = req.body;
 
         this.validatePath(filePath);
         this.validateUserId(ownerId);
-        this.validateUserId(userId);
+        this.validateUserId(userEmail);
         this.validatePermission(permission);
-
-        return this.fileRepo.shareFileWithUser(filePath, ownerId, userId, permission);
+        const user = await authRepository.findUserByEmail(userEmail);
+        if (!user)
+            throw new BadRequestError("User with this email couldn't be found");
+        if (user.id === ownerId)
+            throw new BadRequestError("User can't share a file with himself");
+        return this.fileRepo.shareFileWithUser(filePath, ownerId, user.id, permission);
     }
 
     public async getFilesSharedWithUser(userId: string): Promise<File[]> {
@@ -190,7 +216,6 @@ export default class FileService {
     private async assertCanWriteFile(userId: string, filePath: string, ownerId: string): Promise<void> {
         this.validateUserId(userId);
         this.validatePath(filePath);
-
         if (await this.fileRepo.userOwnsFile(userId, filePath)) {
             return;
         }
@@ -286,7 +311,7 @@ export default class FileService {
 
             for (let i = 0; i < parts.length; i++) {
                 const part = parts[i];
-                const isFile = i === parts.length - 1;
+                const isFile = i === parts.length - 1 && file.fileType !== 'folder';
                 currentPath = currentPath ? `${currentPath}/${part}` : part;
                 if (!current.items) current.items = [];
                 let next = current.items.find(item => item.name === part);

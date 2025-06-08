@@ -1,0 +1,72 @@
+.sidebar {
+  width: 100%;
+  max-width: 180px;
+  padding: 1rem;
+}
+
+.sidebar-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.logo {
+  margin-bottom: 2rem;
+  font-size: 20px;
+  font-weight: bold;
+  color: #202124;
+  text-align: center;
+}
+
+.upload-btn {
+  margin-bottom: 1.5rem;
+  padding: 10px;
+  font-size: 14px;
+  color: var(--color-white);
+  background-color: var(--color-accent);
+  border: none;
+  border-radius: 15px;
+  cursor: pointer;
+}
+
+.upload-btn:hover {
+  background-color: var(--color-accentHover);
+}
+
+.nav-buttons {
+  display: flex;
+  flex-direction: column;
+}
+
+.nav-buttons button {
+  padding: 10px;
+  background: none;
+  color: var(--color-textAccent);
+  text-align: left;
+  font-size: 14px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.nav-buttons button:hover,
+.nav-buttons .active {
+  background-color: var(--color-primary);
+  color: var(--color-accent);
+}
+
+.logout-btn {
+  display: flex;
+  gap: 10px;
+  margin-top: auto;
+  padding: 10px;
+  font-size: 14px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.logout-btn:hover {
+  background-color: var(--color-primaryHover);
+}
