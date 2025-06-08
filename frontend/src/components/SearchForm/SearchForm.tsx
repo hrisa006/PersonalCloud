@@ -1,30 +1,33 @@
 import { useState, useRef } from "react";
 import "./SearchForm.css";
 import { useFileSystem } from "../../contexts/FileSystemContext";
+import { message } from "antd";
 
 const SearchBar = () => {
   const [query, setQuery] = useState("");
-  const [error, setError] = useState("");
   const searchTimeoutRef = useRef<number | undefined>(undefined);
 
   const { searchFiles, fetchTree } = useFileSystem();
 
   const validateSearchTerm = (searchTerm: string) => {
     if (!searchTerm.trim()) {
-      setError("Please enter a search term.");
       fetchTree();
-      return;
+      return false;
     }
+
+    return true;
   };
 
   const fetchFiles = async () => {
-    validateSearchTerm(query);
+    const isValid = validateSearchTerm(query);
+
+    if (!isValid) return;
 
     try {
       await searchFiles(query);
     } catch (err) {
       console.error("Search failed:", err);
-      setError("Not found");
+      message.error("Неуспешно търсене");
     }
   };
 
@@ -52,8 +55,6 @@ const SearchBar = () => {
           onChange={handleChange}
         />
       </form>
-
-      {error && <div className="error-message">{error}</div>}
     </div>
   );
 };
