@@ -150,7 +150,9 @@ export default class FileService {
         this.validatePermission(permission);
         const user = await authRepository.findUserByEmail(userEmail);
         if (!user)
-            throw new BadRequestError("User we this email couldn't be found");
+            throw new BadRequestError("User with this email couldn't be found");
+        if (user.id === ownerId)
+            throw new BadRequestError("User can't share a file with himself");
         console.log(user.id);
         return this.fileRepo.shareFileWithUser(filePath, ownerId, user.id, permission);
     }
