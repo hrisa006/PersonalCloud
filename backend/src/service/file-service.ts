@@ -4,6 +4,7 @@ import { Request } from 'express';
 import busboy from 'busboy';
 import { BadRequestError } from '../errors/bad-request-error';
 import { FileRepository } from '../repository/file-repository';
+import { authRepository } from '../repository/auth-repository';
 import { File, SharedFiles, Users, PermissionType } from '@prisma/client';
 
 const DIR_BACK_LEVELS = 3;
@@ -15,7 +16,6 @@ const ERROR = 'error';
 
 export default class FileService {
     private fileRepo: FileRepository;
-
     constructor() {
         this.fileRepo = new FileRepository();
     }
@@ -141,15 +141,18 @@ export default class FileService {
         return this.buildFileTree(files);
     }
 
-    public async shareFileWithUser(ownerId: string, req: Request): Promise<SharedFiles> {
+    public async shareFileWithUser(ownerEmail: string, req: Request): Promise<SharedFiles> {
         const { filePath, userId, permission } = req.body;
 
         this.validatePath(filePath);
-        this.validateUserId(ownerId);
+        this.validateUserId(ownerEmail);
         this.validateUserId(userId);
         this.validatePermission(permission);
-
-        return this.fileRepo.shareFileWithUser(filePath, ownerId, userId, permission);
+        const user = await authRepository.findUserByEmail(ownerEmail);
+        if (!user)
+            throw new BadRequestError("User we this email couldn't be found");
+        console.log(user.id);
+        return this.fileRepo.shareFileWithUser(filePath, user.id, userId, permission);
     }
 
     public async getFilesSharedWithUser(userId: string): Promise<File[]> {
