@@ -311,7 +311,7 @@ export default class FileService {
 
             for (let i = 0; i < parts.length; i++) {
                 const part = parts[i];
-                const isFile = i === parts.length - 1;
+                const isFile = i === parts.length - 1 && file.fileType !== 'folder';
                 currentPath = currentPath ? `${currentPath}/${part}` : part;
                 if (!current.items) current.items = [];
                 let next = current.items.find(item => item.name === part);
