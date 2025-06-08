@@ -13,6 +13,7 @@ interface Props {
   onPathChange: (newPath: string[]) => void;
   mode: "mydrive" | "shared" | "search";
   searchQuery?: string;
+  onFileClick?: (file: FileItem) => void;
 }
 
 const FileList: React.FC<Props> = ({
@@ -21,6 +22,7 @@ const FileList: React.FC<Props> = ({
   onPathChange,
   mode,
   searchQuery,
+  onFileClick,
 }) => {
   const { sharedFiles } = useFileSystem();
 
@@ -96,7 +98,7 @@ const FileList: React.FC<Props> = ({
             onClick={
               mode === "mydrive" && item.type === "folder"
                 ? () => handleFolderClick(item.name)
-                : undefined
+                : () => onFileClick?.(item)
             }
             mode={mode}
           />

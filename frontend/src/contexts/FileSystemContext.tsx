@@ -48,6 +48,10 @@ interface FileSystemContextProps {
     file: File
   ) => Promise<void>;
   fetchFileBlob: (filePath: string) => Promise<File>;
+  getFile: (
+      filePath: string,
+      ownerId?: string
+  ) => Promise<Blob>;
 }
 
 const FileSystemContext = createContext<FileSystemContextProps | undefined>(
@@ -121,7 +125,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({
       `${API_BASE_URL}/file?filePath=${encodeURIComponent(currentPath)}`,
       {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
+        headers: {Authorization: `Bearer ${token}`},
         body: formData,
       }
     );
@@ -184,6 +188,25 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({
     a.remove();
     window.URL.revokeObjectURL(objectUrl);
   };
+
+  const getFile = async (filePath: string, ownerId?: string) => {
+    const token = getToken();
+    if (!token) {
+      throw new Error("Not authenticated");
+    }
+
+    const url = new URL(`${API_BASE_URL}/file`);
+    url.searchParams.append("filePath", filePath);
+
+    if (ownerId) {
+      url.searchParams.append("ownerId", ownerId);
+    }
+
+    return await customHttpBlobRequest(url.toString(), {
+      method: "GET",
+      headers: {Authorization: `Bearer ${token}`},
+    });
+  }
 
   const deleteFile = async (filePath: string, ownerId?: string) => {
     const token = getToken();
@@ -289,6 +312,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({
         shareFile,
         updateFilePath,
         fetchFileBlob,
+        getFile,
       }}
     >
       {children}

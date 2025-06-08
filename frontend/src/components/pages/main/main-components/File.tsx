@@ -59,7 +59,10 @@ const File: React.FC<FileProps> = ({ file, onClick, mode }) => {
   return (
     <li
       className="file-item"
-      onClick={file.type === "folder" ? onClick : undefined}
+      onClick={(e) => {
+        if ((e.target as HTMLElement).closest("button")) return;
+        onClick?.();
+      }}
     >
       <h3>{file.name}</h3>
       <h3>{file.owner?.name ?? "Мен"}</h3>
