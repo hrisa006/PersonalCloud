@@ -52,7 +52,9 @@ export default function Dashboard() {
       <main>
         <Header />
         {isLoading ? (
-          <p>Loading files...</p>
+          <p style={{ textAlign: "center", color: "#999", marginTop: "250px" }}>
+            Loading files...
+          </p>
         ) : (
           <FileList
             root={

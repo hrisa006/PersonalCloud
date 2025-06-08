@@ -1,5 +1,6 @@
 import { useLocation } from "react-router-dom";
 import { useFileSystem } from "../../../../contexts/FileSystemContext";
+import { message } from "antd";
 import "./Header.css";
 
 export default function Header() {
@@ -9,7 +10,7 @@ export default function Header() {
   const handleCreateFolder = async () => {
     const token = localStorage.getItem("token");
     if (!token) {
-      alert("You must be logged in.");
+      message.error("You must be logged in.");
       return;
     }
 
@@ -27,10 +28,9 @@ export default function Header() {
 
     try {
       await createFolder(folderInput);
-      alert("Folder created successfully!");
+      message.success("Folder created successfully!");
     } catch (err) {
       console.error("Error creating folder:", err);
-      alert("Error creating folder.");
     }
   };
 

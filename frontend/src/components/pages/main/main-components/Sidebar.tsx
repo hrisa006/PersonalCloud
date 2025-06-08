@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 
 import { useFileSystem } from "../../../../contexts/FileSystemContext";
 import { FiLogOut } from "react-icons/fi";
+import { message } from "antd";
 import "./Sidebar.css";
 
 interface SidebarProps {
@@ -34,10 +35,9 @@ const Sidebar: React.FC<SidebarProps> = ({ mode, setMode }) => {
 
     try {
       await uploadFile(file, currentPath);
-      alert("File uploaded successfully!");
+      message.success("File uploaded successfully!");
     } catch (err) {
       console.error("Upload failed:", err);
-      alert("Failed to upload file.");
     } finally {
       e.target.value = "";
     }

@@ -1,3 +1,4 @@
+import '@ant-design/v5-patch-for-react-19';
 import { useEffect } from "react";
 import { Routes, Route } from "react-router-dom";
 import PrivateRoute from "./components/routes/PrivateRoute";
@@ -15,18 +16,18 @@ function App() {
 
   return (
     <div className="app">
-      {/* <Routes>
+      <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route
           path="/*"
           element={
-            <PrivateRoute> */}
-      <Main />
-      {/* </PrivateRoute>
+            <PrivateRoute>
+              <Main />
+            </PrivateRoute>
           }
         />
-      </Routes> */}
+      </Routes>
     </div>
   );
 }

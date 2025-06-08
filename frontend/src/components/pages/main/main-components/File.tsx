@@ -9,6 +9,7 @@ import { FiDownload } from "react-icons/fi";
 import { ImBin } from "react-icons/im";
 import { IoMdInformationCircle } from "react-icons/io";
 import { FaEdit } from "react-icons/fa";
+import { message } from "antd";
 import "./File.css";
 
 interface FileProps {
@@ -23,10 +24,11 @@ const File: React.FC<FileProps> = ({ file, onClick, mode }) => {
   const [isSharing, setIsSharing] = useState(false);
   const [shareUserEmail, setShareUserEmail] = useState("");
   const [permission, setPermission] = useState<"READ" | "WRITE">("READ");
+  const [isInfoVisible, setIsInfoVisible] = useState(false);
 
   const handleShareSubmit = async () => {
     if (!shareUserEmail) {
-      alert("Please enter a user ID.");
+      message.error("Please enter a user ID.");
       return;
     }
     try {
@@ -48,10 +50,9 @@ const File: React.FC<FileProps> = ({ file, onClick, mode }) => {
     try {
       const fileBlob = await fetchFileBlob(currentPath);
       await updateFilePath(currentPath, newPath, fileBlob);
-      alert("File moved successfully!");
+      message.success("File moved successfully!");
     } catch (err) {
       console.error("Failed to update file path:", err);
-      alert("Failed to move file.");
     }
   };
 
@@ -61,7 +62,7 @@ const File: React.FC<FileProps> = ({ file, onClick, mode }) => {
       onClick={file.type === "folder" ? onClick : undefined}
     >
       <h3>{file.name}</h3>
-      <h3>{file.owner?.name ?? "You"}</h3>
+      <h3>{file.owner?.name ?? "Мен"}</h3>
       <h3>
         {file.type === "file"
           ? file.updatedAt
@@ -77,7 +78,7 @@ const File: React.FC<FileProps> = ({ file, onClick, mode }) => {
                 <button title="Share" onClick={() => setIsSharing(true)}>
                   <FaUserPlus />
                 </button>
-                <button onClick={handleEditPath}>
+                <button title="Edit" onClick={handleEditPath}>
                   <FaEdit />
                 </button>
               </>
@@ -96,32 +97,72 @@ const File: React.FC<FileProps> = ({ file, onClick, mode }) => {
                 <ImBin />
               </button>
             )}
+            <button title="Info" onClick={() => setIsInfoVisible(true)}>
+              <IoMdInformationCircle />
+            </button>
           </>
         )}
-        <button title="Info">
-          <IoMdInformationCircle />
-        </button>
       </div>
 
       {isSharing && (
-        <div className="share-modal">
-          <h4>Share "{file.name}"</h4>
-          <input
-            type="text"
-            placeholder="User Email"
-            value={shareUserEmail}
-            onChange={(e) => setShareUserEmail(e.target.value)}
-          />
-          <select
-            value={permission}
-            onChange={(e) => setPermission(e.target.value as "READ" | "WRITE")}
-          >
-            <option value="READ">Read</option>
-            <option value="WRITE">Write</option>
-          </select>
-          <div className="modal-actions">
-            <button onClick={handleShareSubmit}>Share</button>
-            <button onClick={() => setIsSharing(false)}>Cancel</button>
+        <div className="modal-backdrop">
+          <div className="share-modal">
+            <h4>Share "{file.name}"</h4>
+            <input
+              type="text"
+              placeholder="User Email"
+              value={shareUserEmail}
+              onChange={(e) => setShareUserEmail(e.target.value)}
+            />
+            <select
+              value={permission}
+              onChange={(e) =>
+                setPermission(e.target.value as "READ" | "WRITE")
+              }
+            >
+              <option value="READ">Read</option>
+              <option value="WRITE">Write</option>
+            </select>
+            <div className="modal-actions">
+              <button onClick={handleShareSubmit}>Share</button>
+              <button onClick={() => setIsSharing(false)}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isInfoVisible && (
+        <div className="modal-backdrop">
+          <div className="share-modal">
+            <h4 style={{ fontSize: "20px" }}>File Info</h4>
+            <p>
+              <strong>Name:</strong> {file.name}
+            </p>
+            <p>
+              <strong>Owner:</strong>{" "}
+              {mode === "shared" ? file.owner?.name : "me"}
+            </p>
+            <p>
+              <strong>Permission:</strong>{" "}
+              {mode === "shared" ? file.permission?.toLowerCase() : "owner"}
+            </p>
+            <p>
+              <strong>Type:</strong> {file.type}
+            </p>
+            <p>
+              <strong>Path:</strong> {file.path}
+            </p>
+            <p>
+              <strong>Created:</strong>{" "}
+              {file.createdAt ? new Date(file.createdAt).toLocaleString() : "-"}
+            </p>
+            <p>
+              <strong>Updated:</strong>{" "}
+              {file.updatedAt ? new Date(file.updatedAt).toLocaleString() : "-"}
+            </p>
+            <div className="modal-actions">
+              <button onClick={() => setIsInfoVisible(false)}>Close</button>
+            </div>
           </div>
         </div>
       )}

@@ -55,9 +55,9 @@ const FileList: React.FC<Props> = ({
   };
 
   const getRootLabel = () => {
-    if (mode === "shared") return "Shared";
-    if (mode === "search") return "Search Results";
-    return "MyDrive";
+    if (mode === "shared") return "Споделени с мен";
+    if (mode === "search") return "Резултати от търсенето";
+    return "Моят Облак";
   };
 
   // TODO Searchbar
@@ -82,8 +82,10 @@ const FileList: React.FC<Props> = ({
           ))}
       </div>
 
-      <div>
-        
+      <div className="file-labels">
+        <h3>Име</h3>
+        <h3>Собственик</h3>
+        <h3>Променено</h3>
       </div>
 
       <ul className="file-list">
