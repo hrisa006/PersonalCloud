@@ -1,7 +1,11 @@
-import React, { useState } from "react";
-import { FileItem } from "../../../../constants/fileSystem";
+import React from "react";
+import {
+  FileItem,
+  useFileSystem,
+} from "../../../../contexts/FileSystemContext";
 import File from "./File";
-import './FileList.css'
+
+import "./FileList.css";
 
 interface Props {
   root: FileItem;
@@ -18,8 +22,9 @@ const FileList: React.FC<Props> = ({
   onPathChange,
   mode,
   searchQuery,
-  sharedWithUser,
 }) => {
+  const { sharedFiles, deleteFile } = useFileSystem();
+
   const getCurrentFolder = (
     folder: FileItem,
     currentPath: string[]
@@ -56,17 +61,7 @@ const FileList: React.FC<Props> = ({
     return "MyDrive";
   };
 
-  const findSharedFiles = (folder: FileItem, user: string): FileItem[] => {
-    const result: FileItem[] = [];
-    const traverse = (node: FileItem) => {
-      if (node.type === "file" && node.sharedWith?.includes(user))
-        result.push(node);
-      node.items?.forEach(traverse);
-    };
-    traverse(folder);
-    return result;
-  };
-
+  //??
   const searchFiles = (folder: FileItem, query: string): FileItem[] => {
     const result: FileItem[] = [];
     const traverse = (node: FileItem) => {
@@ -79,18 +74,15 @@ const FileList: React.FC<Props> = ({
   };
 
   const itemsToRender =
-    mode === "shared" && sharedWithUser
-      ? findSharedFiles(root, sharedWithUser)
+    mode === "shared"
+      ? sharedFiles ?? []
       : mode === "search" && searchQuery
       ? searchFiles(root, searchQuery)
-      : getCurrentFolder(root, path).items?.filter(
-          (item) => !item.sharedWith || item.sharedWith.length === 0
-        ) ?? [];
+      : getCurrentFolder(root, path).items ?? [];
 
   return (
     <div className="file-list-container">
       <div className="path-bar">
-        <strong>Path: </strong>
         <button onClick={handleResetPath}>{getRootLabel()}</button>
         {mode === "mydrive" &&
           path.map((folder, index) => (
@@ -111,6 +103,7 @@ const FileList: React.FC<Props> = ({
                 ? () => handleFolderClick(item.name)
                 : undefined
             }
+            onDelete={() => deleteFile(item.path)}
           />
         ))}
         {itemsToRender.length === 0 && (
