@@ -91,7 +91,6 @@ export default class FileService {
 
 
         const internalFilePath = this.getInternalFilePathByOwner(ownerId, userId, reqFilePath)
-
         if (!fs.existsSync(internalFilePath))
             throw new BadRequestError('File does not exist');
 
@@ -108,15 +107,16 @@ export default class FileService {
      */
     public async updateFile(userId: string, req: Request): Promise<FileUploadResponseDto> {
         const reqFilePath = req.query.filePath as string ?? '';
+        const newPath = req.query.newPath as string ?? '';
         const ownerId = req.query.ownerId as string ?? '';
 
         this.validatePath(reqFilePath);
+        this.validatePath(newPath);
 
         await this.assertCanWriteFile(userId, reqFilePath, ownerId);
-
         await this.removeFile(userId, req, false);
 
-        const result = await this.handleBusboyFileUpload(path.dirname((ownerId === '' ? userId : ownerId) + '/' + reqFilePath), req);
+        const result = await this.handleBusboyFileUpload(path.dirname((ownerId === '' ? userId : ownerId) + '/' + newPath), req);
         result.path = result.path.split('/').slice(1).join('/');
 
         await this.fileRepo.updateFile(req.query.filePath as string, ownerId === '' ? userId : ownerId, {
@@ -166,8 +166,9 @@ export default class FileService {
         this.validatePermission(permission);
         const user = await authRepository.findUserByEmail(userEmail);
         if (!user)
-            throw new BadRequestError("User we this email couldn't be found");
-        console.log(user.id);
+            throw new BadRequestError("User with this email couldn't be found");
+        if (user.id === ownerId)
+            throw new BadRequestError("User can't share a file with himself");
         return this.fileRepo.shareFileWithUser(filePath, ownerId, user.id, permission);
     }
 
@@ -231,7 +232,6 @@ export default class FileService {
     private async assertCanWriteFile(userId: string, filePath: string, ownerId: string): Promise<void> {
         this.validateUserId(userId);
         this.validatePath(filePath);
-
         if (await this.fileRepo.userOwnsFile(userId, filePath)) {
             return;
         }
@@ -327,7 +327,7 @@ export default class FileService {
 
             for (let i = 0; i < parts.length; i++) {
                 const part = parts[i];
-                const isFile = i === parts.length - 1;
+                const isFile = i === parts.length - 1 && file.fileType !== 'folder';
                 currentPath = currentPath ? `${currentPath}/${part}` : part;
                 if (!current.items) current.items = [];
                 let next = current.items.find(item => item.name === part);

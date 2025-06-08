@@ -1,11 +1,7 @@
 .sidebar {
-  width: 240px;
-  background-color: #ffffff;
-  border-right: 1px solid #e0e0e0;
+  width: 100%;
+  max-width: 180px;
   padding: 1rem;
-  box-shadow: 1px 0 4px rgba(0, 0, 0, 0.05);
-  display: flex;
-  flex-direction: column;
 }
 
 .sidebar-content {
@@ -15,26 +11,26 @@
 }
 
 .logo {
-  font-size: 18px;
-  font-weight: bold;
   margin-bottom: 2rem;
+  font-size: 20px;
+  font-weight: bold;
   color: #202124;
   text-align: center;
 }
 
 .upload-btn {
-  background-color: #1a73e8;
-  color: white;
-  border: none;
-  border-radius: 20px;
+  margin-bottom: 1.5rem;
   padding: 10px;
   font-size: 14px;
-  margin-bottom: 1.5rem;
+  color: var(--color-white);
+  background-color: var(--color-accent);
+  border: none;
+  border-radius: 15px;
   cursor: pointer;
 }
 
 .upload-btn:hover {
-  background-color: #1669c1;
+  background-color: var(--color-accentHover);
 }
 
 .nav-buttons {
@@ -43,38 +39,34 @@
 }
 
 .nav-buttons button {
-  background: none;
-  border: none;
   padding: 10px;
+  background: none;
+  color: var(--color-textAccent);
   text-align: left;
   font-size: 14px;
+  border: none;
+  border-radius: 5px;
   cursor: pointer;
-  color: #5f6368;
-  border-radius: 6px;
   transition: background 0.2s;
 }
 
 .nav-buttons button:hover,
 .nav-buttons .active {
-  background-color: #e8f0fe;
-  color: #1a73e8;
+  background-color: var(--color-primary);
+  color: var(--color-accent);
 }
 
 .logout-btn {
+  display: flex;
+  gap: 10px;
   margin-top: auto;
   padding: 10px;
-  border: none;
-  background-color: #d93025;
-  color: white;
-  border-radius: 6px;
   font-size: 14px;
+  border: none;
+  border-radius: 6px;
   cursor: pointer;
 }
 
 .logout-btn:hover {
-  background-color: #c5221f;
-}
-
-.spacer {
-  flex-grow: 1;
+  background-color: var(--color-primaryHover);
 }

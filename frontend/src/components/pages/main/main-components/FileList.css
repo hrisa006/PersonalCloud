@@ -1,27 +1,42 @@
 .file-list-container {
-  padding: 1rem;
-  background-color: #fff;
-  border-radius: 8px;
-  margin: 1rem;
-  box-shadow: 0 1px 3px rgba(60, 64, 67, 0.1);
+  padding: 20px;
+  border: 3px solid var(--color-accent);
+  border-radius: 5px;
 }
 
 .path-bar {
-  margin-bottom: 1rem;
-  font-size: 14px;
-  display: flex;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 6px;
+  font-size: 20px;
 }
 
 .path-bar button {
+  padding: 2px 8px;
   background: none;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--color-black);
   border: none;
-  color: #1a73e8;
   cursor: pointer;
+}
+
+.path-bar button:hover {
+  background-color: var(--color-primary);
+  text-align: center;
+  border: none;
+  border-radius: 5px;
+}
+
+.file-labels {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  padding: 3px 8px;
+  border-bottom: 1px solid var(--color-accent);
+}
+
+.file-labels h3 {
   font-size: 14px;
-  padding: 2px 6px;
+  font-weight: 300;
+  color: var(--color-accent);
 }
 
 .file-list {
@@ -31,8 +46,8 @@
 }
 
 .empty-message {
-  text-align: center;
-  color: #999;
   padding: 2rem 0;
   font-size: 14px;
+  color: #999;
+  text-align: center;
 }

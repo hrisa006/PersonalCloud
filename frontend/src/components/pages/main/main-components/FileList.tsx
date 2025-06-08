@@ -1,10 +1,10 @@
 import React from "react";
+
 import {
   FileItem,
   useFileSystem,
 } from "../../../../contexts/FileSystemContext";
 import File from "./File";
-
 import "./FileList.css";
 
 interface Props {
@@ -13,7 +13,7 @@ interface Props {
   onPathChange: (newPath: string[]) => void;
   mode: "mydrive" | "shared" | "search";
   searchQuery?: string;
-  sharedWithUser?: string;
+  onFileClick?: (file: FileItem) => void;
 }
 
 const FileList: React.FC<Props> = ({
@@ -22,8 +22,9 @@ const FileList: React.FC<Props> = ({
   onPathChange,
   mode,
   searchQuery,
+  onFileClick,
 }) => {
-  const { sharedFiles, deleteFile } = useFileSystem();
+  const { sharedFiles } = useFileSystem();
 
   const getCurrentFolder = (
     folder: FileItem,
@@ -56,29 +57,19 @@ const FileList: React.FC<Props> = ({
   };
 
   const getRootLabel = () => {
-    if (mode === "shared") return "Shared";
-    if (mode === "search") return "Search Results";
-    return "MyDrive";
+    if (mode === "shared") return "Споделени с мен";
+    if (mode === "search") return "Резултати от търсенето";
+    return "Моят Облак";
   };
 
-  //??
-  const searchFiles = (folder: FileItem, query: string): FileItem[] => {
-    const result: FileItem[] = [];
-    const traverse = (node: FileItem) => {
-      if (node.name.toLowerCase().includes(query.toLowerCase()))
-        result.push(node);
-      node.items?.forEach(traverse);
-    };
-    traverse(folder);
-    return result;
-  };
+  // TODO Searchbar
 
   const itemsToRender =
     mode === "shared"
       ? sharedFiles ?? []
-      : mode === "search" && searchQuery
-      ? searchFiles(root, searchQuery)
-      : getCurrentFolder(root, path).items ?? [];
+      : // : mode === "search" && searchQuery
+        // ? searchFiles(root, searchQuery)
+        getCurrentFolder(root, path).items ?? [];
 
   return (
     <div className="file-list-container">
@@ -93,6 +84,12 @@ const FileList: React.FC<Props> = ({
           ))}
       </div>
 
+      <div className="file-labels">
+        <h3>Име</h3>
+        <h3>Собственик</h3>
+        <h3>Променено</h3>
+      </div>
+
       <ul className="file-list">
         {itemsToRender.map((item) => (
           <File
@@ -101,13 +98,13 @@ const FileList: React.FC<Props> = ({
             onClick={
               mode === "mydrive" && item.type === "folder"
                 ? () => handleFolderClick(item.name)
-                : undefined
+                : () => onFileClick?.(item)
             }
-            onDelete={() => deleteFile(item.path)}
+            mode={mode}
           />
         ))}
         {itemsToRender.length === 0 && (
-          <li className="empty-message">No files found.</li>
+          <li className="empty-message">Няма намерени файлове.</li>
         )}
       </ul>
     </div>

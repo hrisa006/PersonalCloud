@@ -6,7 +6,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  background: #1746a2;
+  background: var(--color-accent);
   animation: bgFadeIn 1.5s ease;
   min-height: 100vh;
   min-width: 100vw;

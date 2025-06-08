@@ -9,7 +9,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  background: linear-gradient(135deg, #1746a2 0%, #5dafff 100%);
+  background: linear-gradient(135deg, var(--color-accent) 0%, #5dafff 100%);
   animation: bgFadeIn 1.5s ease;
   z-index: 0;
 }
@@ -25,10 +25,9 @@
   padding: 40px 32px 32px 32px;
   border-radius: 18px;
   box-shadow: 0 8px 40px rgba(80, 80, 180, 0.15);
-  width: 100vw;
-  height: 100vh;
-  max-width: 500px;
-  max-height: 700px;
+  width: 100%;
+  height: auto;
+  max-width: 380px;
   text-align: center;
   animation: fadeInUp 1s cubic-bezier(.39,.575,.565,1.000);
   box-sizing: border-box;

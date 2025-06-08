@@ -1,5 +1,7 @@
 import { useLocation } from "react-router-dom";
 import { useFileSystem } from "../../../../contexts/FileSystemContext";
+import { message } from "antd";
+import "./Header.css";
 
 export default function Header() {
   const location = useLocation();
@@ -8,7 +10,7 @@ export default function Header() {
   const handleCreateFolder = async () => {
     const token = localStorage.getItem("token");
     if (!token) {
-      alert("You must be logged in.");
+      message.error("Трябва да сте влезли в профила си.");
       return;
     }
 
@@ -19,24 +21,26 @@ export default function Header() {
     if (!currentPath) currentPath = "";
 
     const folderInput = window.prompt(
-      "Enter the folder path to create:",
+      "Въведете пътя до папката на създаване:",
       currentPath
     );
     if (!folderInput) return;
 
     try {
       await createFolder(folderInput);
-      alert("Folder created successfully!");
+      message.success("Папката е създадена успешно!");
     } catch (err) {
       console.error("Error creating folder:", err);
-      alert("Error creating folder.");
     }
   };
 
   return (
-    <>
+    <div className="header">
+      <div className="searchbar">Searchbar</div>
       {/* TODO Searchbar */}
-      <button onClick={handleCreateFolder}>+</button>
-    </>
+      <button className="add-folder-btn" onClick={handleCreateFolder}>
+        Нова папка
+      </button>
+    </div>
   );
 }
