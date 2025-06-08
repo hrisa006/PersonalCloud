@@ -1,7 +1,8 @@
 import { Router } from 'express';
 import {
     fileUpload, fileGet, fileUpdate, fileRemove, getFilesSharedWithUser, getUserFilePermission,
-    getUserFileTree, getUsersFileIsSharedWith, shareFileWithUser, unshareFile, updateSharedPermission, createFolder
+    getUserFileTree, getUsersFileIsSharedWith, shareFileWithUser, unshareFile, updateSharedPermission, createFolder,
+    searchFiles
 } from '../controller/file-controller';
 import { authMiddleware } from "../middleware/auth-middleware";
 
@@ -21,5 +22,6 @@ fileRouter.delete('/shared', authMiddleware, unshareFile);
 fileRouter.get('/shared/users', authMiddleware, getUsersFileIsSharedWith);
 fileRouter.put('/shared/permission', authMiddleware, updateSharedPermission);
 fileRouter.get('/shared/permission', authMiddleware, getUserFilePermission);
+fileRouter.get('/search', authMiddleware, searchFiles);
 
 export default fileRouter;

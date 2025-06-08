@@ -2,6 +2,7 @@ import { useLocation } from "react-router-dom";
 import { useFileSystem } from "../../../../contexts/FileSystemContext";
 import { message } from "antd";
 import "./Header.css";
+import SearchBar from "../../../SearchForm/SearchForm";
 
 export default function Header() {
   const location = useLocation();
@@ -35,12 +36,11 @@ export default function Header() {
   };
 
   return (
-    <div className="header">
-      <div className="searchbar">Searchbar</div>
-      {/* TODO Searchbar */}
+    <>
+      <SearchBar />
       <button className="add-folder-btn" onClick={handleCreateFolder}>
         Нова папка
       </button>
-    </div>
+    </>
   );
 }

@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
 import FileService from '../service/file-service';
 import path from 'path';
+import { Console } from 'console';
 
 const fileService = new FileService();
 
@@ -184,12 +185,22 @@ export const searchFiles = async (
 ) => {
   try {
     const userId = (req as any).userId;
-    
     if (!userId) {
       return res.status(401).json({ message: "Unauthorized" });
     }
+    const fileName = req.query.fileName as string;
+    if (!fileName) {
+      return res.status(400).json({ message: "File name query parameter is required" });
+    }
 
-    const files = await fileService.searchFilesByName(req);
+    console.log("Searching for files with name:", fileName);
+
+    const files = await fileService.searchFilesByName(userId, req);
+    console.log("Files found:", files);
+    
+    if (!files || !Array.isArray(files)) {
+      return res.status(500).json({ message: "Internal server error" });
+    }
     const status = files.length ? 200 : 404;
     const message =
       files.length > 0 ? `Found ${files.length} files` : "No files found";
