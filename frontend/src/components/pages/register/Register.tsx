@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import './Register.css';
-import { API_BASE_URL } from '../../utils/constants';
+import { API_BASE_URL } from '../../../utils/constants';
 import { useNavigate } from 'react-router-dom';
 
 const Register: React.FC = () => {

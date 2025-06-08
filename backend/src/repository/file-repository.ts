@@ -4,13 +4,7 @@ import { PrismaClient, PermissionType } from '@prisma/client';
 export class FileRepository {
   prisma: PrismaClient = new PrismaClient({ log: ['query', 'info'] });
 
-  async createFile(data: {
-    userId: string;
-    path: string;
-    fileType: string;
-    createdAt: Date;
-    updatedAt: Date;
-  }): Promise<File> {
+  async createFile(data: { userId: string; path: string; fileType: string; createdAt: Date; updatedAt: Date; }): Promise<File> {
     try {
       return await this.prisma.file.create({ data });
     } catch (error: any) {
@@ -46,12 +40,7 @@ export class FileRepository {
 
   async shareFileWithUser(filePath: string, ownerId: string, userId: string, permission: PermissionType): Promise<SharedFiles> {
     return this.prisma.sharedFiles.create({
-      data: {
-        filePath,
-        ownerId,
-        userId,
-        permissions: permission,
-      },
+      data: {filePath, ownerId, userId, permissions: permission}
     });
   }
 

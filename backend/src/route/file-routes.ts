@@ -1,31 +1,25 @@
 import { Router } from 'express';
 import {
-    fileUpload,
-    getFilesSharedWithUser, getUserFilePermission,
-    getUserFileTree,
-    getUsersFileIsSharedWith,
-    shareFileWithUser, unshareFile, updateSharedPermission
+    fileUpload, fileGet, fileUpdate, fileRemove, getFilesSharedWithUser, getUserFilePermission,
+    getUserFileTree, getUsersFileIsSharedWith, shareFileWithUser, unshareFile, updateSharedPermission, createFolder
 } from '../controller/file-controller';
-import { fileGet } from '../controller/file-controller';
-import { fileUpdate } from '../controller/file-controller';
-import { fileRemove } from '../controller/file-controller';
-import { searchFiles } from '../controller/file-controller';
+import { authMiddleware } from "../middleware/auth-middleware";
 
 const fileRouter = Router();
 
-fileRouter.post('/', fileUpload);
-fileRouter.get('/', fileGet);
-fileRouter.delete('/', fileRemove);
-fileRouter.put('/', fileUpdate);
-fileRouter.get('/search', searchFiles);
+fileRouter.post('/', authMiddleware, fileUpload);
+fileRouter.get('/', authMiddleware, fileGet);
+fileRouter.delete('/', authMiddleware, fileRemove);
+fileRouter.put('/', authMiddleware, fileUpdate);
 
-fileRouter.get('/user/tree', getUserFileTree);
+fileRouter.post('/folder', authMiddleware, createFolder);
+fileRouter.get('/user/tree', authMiddleware, getUserFileTree);
 
-fileRouter.post('/share', shareFileWithUser);
-fileRouter.get('/shared', getFilesSharedWithUser);
-fileRouter.delete('/shared', unshareFile);
-fileRouter.get('/shared/users', getUsersFileIsSharedWith);
-fileRouter.put('/shared/permission', updateSharedPermission);
-fileRouter.get('/shared/permission', getUserFilePermission);
+fileRouter.post('/share', authMiddleware, shareFileWithUser);
+fileRouter.get('/shared', authMiddleware, getFilesSharedWithUser);
+fileRouter.delete('/shared', authMiddleware, unshareFile);
+fileRouter.get('/shared/users', authMiddleware, getUsersFileIsSharedWith);
+fileRouter.put('/shared/permission', authMiddleware, updateSharedPermission);
+fileRouter.get('/shared/permission', authMiddleware, getUserFilePermission);
 
 export default fileRouter;

@@ -51,7 +51,7 @@ model SharedFiles {
   userId      String         @db.Uuid
   permissions PermissionType
 
-  file File  @relation(fields: [filePath, ownerId], references: [path, userId])
+  file File  @relation(fields: [filePath, ownerId], references: [path, userId], onDelete: Cascade)
   user Users @relation(fields: [userId], references: [id])
 
   @@id([filePath, ownerId, userId])
