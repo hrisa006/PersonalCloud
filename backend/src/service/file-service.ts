@@ -91,15 +91,16 @@ export default class FileService {
      */
     public async updateFile(userId: string, req: Request): Promise<FileUploadResponseDto> {
         const reqFilePath = req.query.filePath as string ?? '';
+        const newPath = req.query.newPath as string ?? '';
         const ownerId = req.query.ownerId as string ?? '';
 
         this.validatePath(reqFilePath);
+        this.validatePath(newPath);
 
         await this.assertCanWriteFile(userId, reqFilePath, ownerId);
-        
         await this.removeFile(userId, req, false);
 
-        const result = await this.handleBusboyFileUpload(path.dirname((ownerId === '' ? userId : ownerId) + '/' + reqFilePath), req);
+        const result = await this.handleBusboyFileUpload(path.dirname((ownerId === '' ? userId : ownerId) + '/' + newPath), req);
         result.path = result.path.split('/').slice(1).join('/');
 
         await this.fileRepo.updateFile(req.query.filePath as string, ownerId === '' ? userId : ownerId, {
@@ -212,10 +213,8 @@ export default class FileService {
     }
 
     private async assertCanWriteFile(userId: string, filePath: string, ownerId: string): Promise<void> {
-        console.log(userId)
         this.validateUserId(userId);
         this.validatePath(filePath);
-        console.log(userId)
         if (await this.fileRepo.userOwnsFile(userId, filePath)) {
             return;
         }
