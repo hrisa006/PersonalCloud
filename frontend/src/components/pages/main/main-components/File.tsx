@@ -9,6 +9,8 @@ import { FiDownload } from "react-icons/fi";
 import { ImBin } from "react-icons/im";
 import { IoMdInformationCircle } from "react-icons/io";
 import { FaEdit } from "react-icons/fa";
+import { FileIcon } from 'react-file-icon';
+import { FolderFilled } from '@ant-design/icons';
 import { message } from "antd";
 import "./File.css";
 
@@ -64,6 +66,13 @@ const File: React.FC<FileProps> = ({ file, onClick, mode }) => {
         onClick?.();
       }}
     >
+
+      <div className="file-icon">
+        {file.type === "folder" ? (
+            <FolderFilled style={{ fontSize: 32, color: '#F4C542' }} />)
+            : (<FileIcon size={16} color="#2C5898" labelColor="#2C5898" labelUppercase type="document" glyphColor="rgba(255,255,255,0.4)" extension={file.ext.substring(1)}/>
+        )}
+      </div>
       <h3>{file.name}</h3>
       <h3>{file.owner?.name ?? "Мен"}</h3>
       <h3>
