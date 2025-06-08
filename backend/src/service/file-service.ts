@@ -141,18 +141,18 @@ export default class FileService {
         return this.buildFileTree(files);
     }
 
-    public async shareFileWithUser(ownerEmail: string, req: Request): Promise<SharedFiles> {
-        const { filePath, userId, permission } = req.body;
+    public async shareFileWithUser(ownerId: string, req: Request): Promise<SharedFiles> {
+        const { filePath, userEmail, permission } = req.body;
 
         this.validatePath(filePath);
-        this.validateUserId(ownerEmail);
-        this.validateUserId(userId);
+        this.validateUserId(ownerId);
+        this.validateUserId(userEmail);
         this.validatePermission(permission);
-        const user = await authRepository.findUserByEmail(ownerEmail);
+        const user = await authRepository.findUserByEmail(userEmail);
         if (!user)
             throw new BadRequestError("User we this email couldn't be found");
         console.log(user.id);
-        return this.fileRepo.shareFileWithUser(filePath, user.id, userId, permission);
+        return this.fileRepo.shareFileWithUser(filePath, ownerId, user.id, permission);
     }
 
     public async getFilesSharedWithUser(userId: string): Promise<File[]> {

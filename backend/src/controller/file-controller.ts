@@ -93,12 +93,12 @@ export const getUserFileTree = async (req: Request, res: Response, next: NextFun
 
 export const shareFileWithUser = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const userEmail = (req as any).userEmail;
-        if (!userEmail) {
+        const userId = (req as any).userId;
+        if (!userId) {
             return res.status(401).json({ message: 'Unauthorized' });
         }
 
-        const result = await fileService.shareFileWithUser(userEmail, req);
+        const result = await fileService.shareFileWithUser(userId, req);
         return res.status(200).json(result);
     } catch (err) {
         return next(err);
