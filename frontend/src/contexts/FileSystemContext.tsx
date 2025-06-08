@@ -1,5 +1,11 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 
+export interface FileOwner {
+  id: string;
+  name: string;
+  email: string;
+}
+
 export interface FileItem {
   name: string;
   type: "file" | "folder";
@@ -7,6 +13,8 @@ export interface FileItem {
   createdAt: string;
   updatedAt: string;
   path: string;
+  owner?: FileOwner;
+  permission?: "READ" | "WRITE";
   items?: FileItem[];
 }
 
@@ -20,14 +28,16 @@ interface FileSystemContextProps {
   downloadFile: (
     filePath: string,
     fileName: string,
-    ownerId?: string
+    ownerEmail?: string
   ) => Promise<void>;
-  deleteFile: (filePath: string) => Promise<void>;
+  deleteFile: (filePath: string, ownerId?: string) => Promise<void>;
   shareFile: (
     filePath: string,
-    userId: string,
+    userEmail: string,
     permission: "READ" | "WRITE"
   ) => Promise<void>;
+  updateFilePath: (newPath: string, file: File) => Promise<void>;
+  fetchFileBlob: (filePath: string) => Promise<File>;
 }
 
 const FileSystemContext = createContext<FileSystemContextProps | undefined>(
@@ -75,9 +85,16 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({
       });
       if (!res.ok) throw new Error("Failed to fetch shared files");
       const data = await res.json();
-      const processedData: FileItem[] = data.map((file: FileItem) => ({
-        ...file,
-        name: file.path.split("/").pop() || file.path, // fallback in case path is empty
+
+      const processedData: FileItem[] = data.map((file: any) => ({
+        name: file.path.split("/").pop() || file.path,
+        type: "file",
+        ext: file.fileType,
+        createdAt: file.createdAt,
+        updatedAt: file.updatedAt,
+        path: file.path,
+        owner: file.owner,
+        permission: file.permission,
       }));
 
       setSharedFiles(processedData);
@@ -145,8 +162,12 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       const url = new URL("http://localhost:8081/file");
       url.searchParams.append("filePath", filePath);
+
       if (ownerId) {
         url.searchParams.append("ownerId", ownerId);
+        console.log("Downloading shared file...");
+      } else {
+        console.log("Downloading personal MyDrive file...");
       }
 
       const res = await fetch(url.toString(), {
@@ -173,20 +194,26 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  const deleteFile = async (filePath: string) => {
+  const deleteFile = async (filePath: string, ownerId?: string) => {
+    console.log("deleting");
     if (!token) return;
     try {
-      const res = await fetch(
-        `http://localhost:8081/file?filePath=${encodeURIComponent(filePath)}`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const url = new URL("http://localhost:8081/file");
+      url.searchParams.append("filePath", filePath);
+
+      if (ownerId) {
+        url.searchParams.append("ownerId", ownerId);
+      }
+
+      const res = await fetch(url.toString(), {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       if (!res.ok) throw new Error("Failed to delete file");
       await fetchTree();
+      if (ownerId) await fetchSharedFiles();
     } catch (err) {
       console.error("Error deleting file:", err);
     }
@@ -194,7 +221,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const shareFile = async (
     filePath: string,
-    userId: string,
+    userEmail: string,
     permission: "READ" | "WRITE"
   ) => {
     if (!token) return;
@@ -205,7 +232,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ filePath, userId, permission }),
+        body: JSON.stringify({ filePath, userEmail, permission }),
       });
       if (!res.ok) throw new Error("Failed to share file");
       alert("File shared successfully!");
@@ -214,6 +241,47 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({
       alert("Could not share file.");
     }
   };
+
+
+  const updateFilePath = async (newPath: string, file: File) => {
+    if (!token) return;
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const res = await fetch(
+        `http://localhost:8081/file?filePath=${encodeURIComponent(newPath)}`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          body: formData,
+        }
+      );
+
+      if (!res.ok) throw new Error("Failed to update file path");
+
+      await fetchTree();
+    } catch (err) {
+      console.error("Error updating file path:", err);
+      throw err;
+    }
+  };
+
+  const fetchFileBlob = async (filePath: string): Promise<File> => {
+    if (!token) throw new Error("Not authenticated");
+    const res = await fetch(`http://localhost:8081/file?filePath=${encodeURIComponent(filePath)}`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    if (!res.ok) throw new Error("Failed to fetch file blob");
+    const blob = await res.blob();
+    return new File([blob], filePath.split("/").pop() || "file", { type: blob.type });
+  };
+
 
   useEffect(() => {
     if (token) fetchTree();
@@ -231,6 +299,8 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({
         downloadFile,
         deleteFile,
         shareFile,
+        updateFilePath,
+        fetchFileBlob,
       }}
     >
       {children}

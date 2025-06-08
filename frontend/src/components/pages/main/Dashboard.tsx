@@ -72,7 +72,6 @@ export default function Dashboard() {
             mode={mode}
             path={path}
             onPathChange={handlePathChange}
-            sharedWithUser="me"
           />
         )}
       </main>

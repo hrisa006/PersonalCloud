@@ -75,7 +75,6 @@ export default class FileService {
 
 
         const internalFilePath = this.getInternalFilePathByOwner(ownerId, userId, reqFilePath)
-
         if (!fs.existsSync(internalFilePath))
             throw new BadRequestError('File does not exist');
 
@@ -97,7 +96,7 @@ export default class FileService {
         this.validatePath(reqFilePath);
 
         await this.assertCanWriteFile(userId, reqFilePath, ownerId);
-
+        
         await this.removeFile(userId, req, false);
 
         const result = await this.handleBusboyFileUpload(path.dirname((ownerId === '' ? userId : ownerId) + '/' + reqFilePath), req);
@@ -213,9 +212,10 @@ export default class FileService {
     }
 
     private async assertCanWriteFile(userId: string, filePath: string, ownerId: string): Promise<void> {
+        console.log(userId)
         this.validateUserId(userId);
         this.validatePath(filePath);
-
+        console.log(userId)
         if (await this.fileRepo.userOwnsFile(userId, filePath)) {
             return;
         }

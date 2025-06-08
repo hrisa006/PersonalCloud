@@ -12,27 +12,44 @@ import "./File.css";
 interface FileProps {
   file: FileItem;
   onClick?: () => void;
-  onDelete?: (filePath: string) => void;
+  mode: "mydrive" | "shared" | "search";
 }
 
-const File: React.FC<FileProps> = ({ file, onClick, onDelete }) => {
-  const { downloadFile, shareFile } = useFileSystem();
+const File: React.FC<FileProps> = ({ file, onClick, mode }) => {
+  const { downloadFile, deleteFile, shareFile, updateFilePath, fetchFileBlob } =
+    useFileSystem();
   const [isSharing, setIsSharing] = useState(false);
-  const [shareUserId, setShareUserId] = useState("");
+  const [shareUserEmail, setShareUserEmail] = useState("");
   const [permission, setPermission] = useState<"READ" | "WRITE">("READ");
 
   const handleShareSubmit = async () => {
-    if (!shareUserId) {
+    if (!shareUserEmail) {
       alert("Please enter a user ID.");
       return;
     }
     try {
-      await shareFile(file.path, shareUserId, permission);
+      await shareFile(file.path, shareUserEmail, permission);
       setIsSharing(false);
-      setShareUserId("");
+      setShareUserEmail("");
       setPermission("READ");
     } catch (err) {
       console.error("Sharing failed:", err);
+    }
+  };
+
+  const handleEditPath = async () => {
+    const currentPath = file.path;
+    const newPath = window.prompt("Edit file path:", currentPath);
+
+    if (!newPath || newPath === currentPath) return;
+
+    try {
+      const fileBlob = await fetchFileBlob(currentPath);
+      await updateFilePath(newPath, fileBlob);
+      alert("File moved successfully!");
+    } catch (err) {
+      console.error("Failed to update file path:", err);
+      alert("Failed to move file.");
     }
   };
 
@@ -42,27 +59,41 @@ const File: React.FC<FileProps> = ({ file, onClick, onDelete }) => {
       onClick={file.type === "folder" ? onClick : undefined}
     >
       <h3>{file.name}</h3>
-      <h3>мен</h3>
+      <h3>{file.owner?.name ?? "You"}</h3>
       <h3>
-        {file.updatedAt ? new Date(file.updatedAt).toLocaleDateString() : "-"}
+        {file.type === "file"
+          ? file.updatedAt
+            ? new Date(file.updatedAt).toLocaleDateString()
+            : "-"
+          : "-"}
       </h3>
       <div className="file-buttons">
         {file.type === "file" && (
           <>
-            <button title="Share" onClick={() => setIsSharing(true)}>
-              <FaUserPlus />
-            </button>
+            {mode === "mydrive" && (
+              <>
+                <button title="Share" onClick={() => setIsSharing(true)}>
+                  <FaUserPlus />
+                </button>
+                <button onClick={handleEditPath}>Edit</button>
+              </>
+            )}
             <button
               title="Download"
-              onClick={() => downloadFile(file.path, file.name)}
+              onClick={() => downloadFile(file.path, file.name, file.owner?.id)}
             >
               <FiDownload />
             </button>
+            {(!file.permission || file.permission === "WRITE") && (
+              <button
+                title="Delete"
+                onClick={() => deleteFile(file.path, file.owner?.id)}
+              >
+                <ImBin />
+              </button>
+            )}
           </>
         )}
-        <button title="Delete" onClick={() => onDelete}>
-          <ImBin />
-        </button>
         <button title="Info">
           <IoMdInformationCircle />
         </button>
@@ -73,9 +104,9 @@ const File: React.FC<FileProps> = ({ file, onClick, onDelete }) => {
           <h4>Share "{file.name}"</h4>
           <input
             type="text"
-            placeholder="User ID"
-            value={shareUserId}
-            onChange={(e) => setShareUserId(e.target.value)}
+            placeholder="User Email"
+            value={shareUserEmail}
+            onChange={(e) => setShareUserEmail(e.target.value)}
           />
           <select
             value={permission}

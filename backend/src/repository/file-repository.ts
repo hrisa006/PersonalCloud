@@ -61,6 +61,7 @@ export class FileRepository {
   }
 
   async deleteFile(path: string, userId: string): Promise<File> {
+    console.log(userId)
     try {
       return await this.prisma.file.delete({
         where: {

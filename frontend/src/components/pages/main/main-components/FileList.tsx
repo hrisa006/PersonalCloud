@@ -13,7 +13,6 @@ interface Props {
   onPathChange: (newPath: string[]) => void;
   mode: "mydrive" | "shared" | "search";
   searchQuery?: string;
-  sharedWithUser?: string;
 }
 
 const FileList: React.FC<Props> = ({
@@ -23,7 +22,7 @@ const FileList: React.FC<Props> = ({
   mode,
   searchQuery,
 }) => {
-  const { sharedFiles, deleteFile } = useFileSystem();
+  const { sharedFiles } = useFileSystem();
 
   const getCurrentFolder = (
     folder: FileItem,
@@ -61,24 +60,14 @@ const FileList: React.FC<Props> = ({
     return "MyDrive";
   };
 
-  //??
-  const searchFiles = (folder: FileItem, query: string): FileItem[] => {
-    const result: FileItem[] = [];
-    const traverse = (node: FileItem) => {
-      if (node.name.toLowerCase().includes(query.toLowerCase()))
-        result.push(node);
-      node.items?.forEach(traverse);
-    };
-    traverse(folder);
-    return result;
-  };
+  // TODO Searchbar
 
   const itemsToRender =
     mode === "shared"
       ? sharedFiles ?? []
-      : mode === "search" && searchQuery
-      ? searchFiles(root, searchQuery)
-      : getCurrentFolder(root, path).items ?? [];
+      : // : mode === "search" && searchQuery
+        // ? searchFiles(root, searchQuery)
+        getCurrentFolder(root, path).items ?? [];
 
   return (
     <div className="file-list-container">
@@ -103,7 +92,7 @@ const FileList: React.FC<Props> = ({
                 ? () => handleFolderClick(item.name)
                 : undefined
             }
-            onDelete={() => deleteFile(item.path)}
+            mode={mode}
           />
         ))}
         {itemsToRender.length === 0 && (
