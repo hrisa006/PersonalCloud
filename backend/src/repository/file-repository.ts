@@ -57,7 +57,7 @@ export class FileRepository {
       }
     });
 
-    return shared.map(s => ({...s.file, permissions: s.permissions}));
+    return shared.map(s => ({...s.file, permission: s.permissions}));
   }
 
   async getUsersFileIsSharedWith(filePath: string, ownerId: string): Promise<Users[]> {
@@ -102,9 +102,7 @@ export class FileRepository {
 
   public async userOwnsFile(userId: string, filePath: string): Promise<boolean> {
     const file = await this.prisma.file.findFirst({
-      where: {
-        userId: userId,
-        path: filePath,
+      where: {userId: userId, path: filePath,
       }
     });
 
