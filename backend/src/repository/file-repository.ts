@@ -1,37 +1,56 @@
-import type { File, SharedFiles, Users } from '@prisma/client';
-import { PrismaClient, Prisma, PermissionType } from '@prisma/client';
-import { BadRequestError } from '../errors/bad-request-error';
+import type { File, SharedFiles, Users } from "@prisma/client";
+import { PrismaClient, Prisma, PermissionType } from "@prisma/client";
+import { BadRequestError } from "../errors/bad-request-error";
 
 export class FileRepository {
-  prisma: PrismaClient = new PrismaClient({ log: ['query', 'info'] });
+  prisma: PrismaClient = new PrismaClient({ log: ["query", "info"] });
 
   private handlePrismaError(error: any, operation: string): never {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      console.error(`[${operation}] PrismaClientKnownRequestError`, error.stack);
+      console.error(
+        `[${operation}] PrismaClientKnownRequestError`,
+        error.stack
+      );
 
       switch (error.code) {
-        case 'P2002':
-          throw new BadRequestError(`Record already exists during ${operation}`);
-        case 'P2003':
-          throw new BadRequestError(`Foreign key constraint error during ${operation}`);
-        case 'P2004':
-          throw new BadRequestError(`Database constraint error during ${operation}`);
-        case 'P2025':
+        case "P2002":
+          throw new BadRequestError(
+            `Record already exists during ${operation}`
+          );
+        case "P2003":
+          throw new BadRequestError(
+            `Foreign key constraint error during ${operation}`
+          );
+        case "P2004":
+          throw new BadRequestError(
+            `Database constraint error during ${operation}`
+          );
+        case "P2025":
           throw new BadRequestError(`Record not found during ${operation}`);
-        case 'P2010':
+        case "P2010":
           throw new BadRequestError(`Raw query failed during ${operation}`);
-        case 'P2011':
-          throw new BadRequestError(`Null constraint violation during ${operation}`);
-        case 'P2012':
-          throw new BadRequestError(`Missing required field during ${operation}`);
-        case 'P2013':
-          throw new BadRequestError(`Missing required argument during ${operation}`);
-        case 'P2014':
-          throw new BadRequestError(`Related record not found during ${operation}`);
-        case 'P2015':
+        case "P2011":
+          throw new BadRequestError(
+            `Null constraint violation during ${operation}`
+          );
+        case "P2012":
+          throw new BadRequestError(
+            `Missing required field during ${operation}`
+          );
+        case "P2013":
+          throw new BadRequestError(
+            `Missing required argument during ${operation}`
+          );
+        case "P2014":
+          throw new BadRequestError(
+            `Related record not found during ${operation}`
+          );
+        case "P2015":
           throw new BadRequestError(`Record not found during ${operation}`);
         default:
-          throw new BadRequestError(`Database error during ${operation}: ${error.message}`);
+          throw new BadRequestError(
+            `Database error during ${operation}: ${error.message}`
+          );
       }
     }
 
@@ -39,24 +58,34 @@ export class FileRepository {
     throw new BadRequestError(`Unexpected error during ${operation}`);
   }
 
-  async createFile(data: { userId: string; path: string; fileType: string; createdAt: Date; updatedAt: Date; }): Promise<File> {
+  async createFile(data: {
+    userId: string;
+    path: string;
+    fileType: string;
+    createdAt: Date;
+    updatedAt: Date;
+  }): Promise<File> {
     try {
       return await this.prisma.file.create({ data });
     } catch (error: any) {
-      this.handlePrismaError(error, 'createFile');
+      this.handlePrismaError(error, "createFile");
     }
   }
 
-  async updateFile(path: string, userId: string, updates: Partial<File>): Promise<File> {
+  async updateFile(
+    path: string,
+    userId: string,
+    updates: Partial<File>
+  ): Promise<File> {
     try {
       return await this.prisma.file.update({
         where: {
-          path_userId: { path, userId }
+          path_userId: { path, userId },
         },
         data: updates,
       });
     } catch (error: any) {
-      this.handlePrismaError(error, 'updateFile');
+      this.handlePrismaError(error, "updateFile");
     }
   }
 
@@ -64,11 +93,11 @@ export class FileRepository {
     try {
       return await this.prisma.file.delete({
         where: {
-          path_userId: { path, userId }
-        }
+          path_userId: { path, userId },
+        },
       });
     } catch (error: any) {
-      this.handlePrismaError(error, 'deleteFile');
+      this.handlePrismaError(error, "deleteFile");
     }
   }
 
@@ -76,25 +105,35 @@ export class FileRepository {
     try {
       return await this.prisma.file.findUnique({
         where: {
-          path_userId: { path, userId }
-        }
+          path_userId: { path, userId },
+        },
       });
     } catch (error: any) {
-      this.handlePrismaError(error, 'getFile');
+      this.handlePrismaError(error, "getFile");
     }
   }
 
-  async shareFileWithUser(filePath: string, ownerId: string, userId: string, permission: PermissionType): Promise<SharedFiles> {
+  async shareFileWithUser(
+    filePath: string,
+    ownerId: string,
+    userId: string,
+    permission: PermissionType
+  ): Promise<SharedFiles> {
     try {
       return await this.prisma.sharedFiles.create({
-        data: { filePath, ownerId, userId, permissions: permission }
+        data: { filePath, ownerId, userId, permissions: permission },
       });
     } catch (error: any) {
-      this.handlePrismaError(error, 'shareFileWithUser');
+      this.handlePrismaError(error, "shareFileWithUser");
     }
   }
 
-  async getFilesSharedWithUser(userId: string): Promise<(File & { owner: { id: string; name: string; email: string }; permissions: PermissionType })[]> {
+  async getFilesSharedWithUser(userId: string): Promise<
+    (File & {
+      owner: { id: string; name: string; email: string };
+      permissions: PermissionType;
+    })[]
+  > {
     try {
       const shared = await this.prisma.sharedFiles.findMany({
         where: { userId },
@@ -105,24 +144,27 @@ export class FileRepository {
                 select: {
                   id: true,
                   name: true,
-                  email: true
-                }
-              }
-            }
-          }
-        }
+                  email: true,
+                },
+              },
+            },
+          },
+        },
       });
 
-      return shared.map(s => ({
+      return shared.map((s) => ({
         ...s.file,
-        permissions: s.permissions
+        permissions: s.permissions,
       }));
     } catch (error: any) {
-      this.handlePrismaError(error, 'getFilesSharedWithUser');
+      this.handlePrismaError(error, "getFilesSharedWithUser");
     }
   }
 
-  async getUsersFileIsSharedWith(filePath: string, ownerId: string): Promise<Users[]> {
+  async getUsersFileIsSharedWith(
+    filePath: string,
+    ownerId: string
+  ): Promise<Users[]> {
     try {
       const shared = await this.prisma.sharedFiles.findMany({
         where: { filePath, ownerId },
@@ -131,11 +173,16 @@ export class FileRepository {
 
       return shared.map((s) => s.user!);
     } catch (error: any) {
-      this.handlePrismaError(error, 'getUsersFileIsSharedWith');
+      this.handlePrismaError(error, "getUsersFileIsSharedWith");
     }
   }
 
-  async updateSharedPermission(filePath: string, ownerId: string, userId: string, permission: PermissionType): Promise<SharedFiles> {
+  async updateSharedPermission(
+    filePath: string,
+    ownerId: string,
+    userId: string,
+    permission: PermissionType
+  ): Promise<SharedFiles> {
     try {
       return await this.prisma.sharedFiles.update({
         where: {
@@ -144,11 +191,15 @@ export class FileRepository {
         data: { permissions: permission },
       });
     } catch (error: any) {
-      this.handlePrismaError(error, 'updateSharedPermission');
+      this.handlePrismaError(error, "updateSharedPermission");
     }
   }
 
-  async unshareFile(filePath: string, ownerId: string, userId: string): Promise<SharedFiles> {
+  async unshareFile(
+    filePath: string,
+    ownerId: string,
+    userId: string
+  ): Promise<SharedFiles> {
     try {
       return await this.prisma.sharedFiles.delete({
         where: {
@@ -156,7 +207,7 @@ export class FileRepository {
         },
       });
     } catch (error: any) {
-      this.handlePrismaError(error, 'unshareFile');
+      this.handlePrismaError(error, "unshareFile");
     }
   }
 
@@ -166,11 +217,31 @@ export class FileRepository {
         where: { userId },
       });
     } catch (error: any) {
-      this.handlePrismaError(error, 'getFilesOwnedByUser');
+      this.handlePrismaError(error, "getFilesOwnedByUser");
     }
   }
 
-  async getUserFilePermission(filePath: string, ownerId: string, userId: string): Promise<SharedFiles | null> {
+  async searchFilesByName(fileName: string, userId: string): Promise<File[]> {
+    try {
+      return await this.prisma.file.findMany({
+        where: {
+          userId,
+          path: {
+            contains: fileName,
+            mode: "insensitive",
+          },
+        },
+      });
+    } catch (error: any) {
+      this.handlePrismaError(error, "searchFilesByName");
+    }
+  }
+
+  async getUserFilePermission(
+    filePath: string,
+    ownerId: string,
+    userId: string
+  ): Promise<SharedFiles | null> {
     try {
       return await this.prisma.sharedFiles.findUnique({
         where: {
@@ -178,22 +249,55 @@ export class FileRepository {
         },
       });
     } catch (error: any) {
-      this.handlePrismaError(error, 'getUserFilePermission');
+      this.handlePrismaError(error, "getUserFilePermission");
     }
   }
 
-  public async userOwnsFile(userId: string, filePath: string): Promise<boolean> {
+  public async userOwnsFile(
+    userId: string,
+    filePath: string
+  ): Promise<boolean> {
     try {
       const file = await this.prisma.file.findFirst({
         where: {
           userId: userId,
           path: filePath,
-        }
+        },
       });
 
       return !!file;
     } catch (error: any) {
-      this.handlePrismaError(error, 'userOwnsFile');
+      this.handlePrismaError(error, "userOwnsFile");
     }
+  }
+
+  async searchFilesWithPermission(
+    nameQuery: string,
+    userId: string
+  ): Promise<File[]> {
+    return this.prisma.file.findMany({
+      where: {
+        OR: [
+          {
+            userId,
+            path: {
+              contains: nameQuery,
+              mode: "insensitive",
+            },
+          },
+          {
+            sharedFiles: {
+              some: {
+                userId: userId,
+              },
+            },
+            path: {
+              contains: nameQuery,
+              mode: "insensitive",
+            },
+          },
+        ],
+      },
+    });
   }
 }

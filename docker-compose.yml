@@ -22,7 +22,7 @@ services:
     links:
       - backend
     ports:
-      - "${WEB_PORT}:${WEB_PORT}"
+      - "${WEB_PORT}:5173"
     env_file:
       - ./frontend/.env
     depends_on:

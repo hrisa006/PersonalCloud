@@ -23,6 +23,8 @@
     "jsonwebtoken": "^9.0.2"
   },
   "devDependencies": {
+    "@types/busboy": "^1.5.4",
+    "@types/cors": "^2.8.17",
     "@types/bcrypt": "^5.0.2",
     "@types/busboy": "^1.5.4",
     "@types/cors": "^2.8.18",
