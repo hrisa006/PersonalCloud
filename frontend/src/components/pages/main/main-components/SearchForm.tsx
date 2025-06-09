@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import "./SearchForm.css";
-import { useFileSystem } from "../../contexts/FileSystemContext";
+import { useFileSystem } from "../../../../contexts/FileSystemContext.tsx";
 import { message } from "antd";
 
 const SearchBar = () => {
@@ -55,6 +55,7 @@ const SearchBar = () => {
           placeholder="Search for files..."
           value={query}
           onChange={handleChange}
+          style={{color: "var(--color-accent)"}}
         />
       </form>
     </div>

@@ -1,19 +1,17 @@
 .search-container {
   max-width: 900px;
-  margin: 0 auto;
-  padding: 20px;
+  gap: 10px;
 }
 
 .input-wrapper {
   display: flex;
   align-items: center;
   background: rgba(255, 255, 255, 0.15);
+  color: var(--color-accent);
+  border: 3px solid var(--color-accent);
   border-radius: 8px;
   padding: 10px 15px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   margin-bottom: 20px;
-  backdrop-filter: blur(5px);
-  transition: transform 0.2s;
 }
 
 .input-wrapper:hover {
