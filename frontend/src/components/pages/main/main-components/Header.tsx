@@ -36,10 +36,10 @@ export default function Header() {
   };
 
   return (
-      <div className="header">
-        <div className="searchbar">
-      <SearchBar />
-        </div>
+    <div className="header">
+      <div className="searchbar">
+        <SearchBar />
+      </div>
       <button className="add-folder-btn" onClick={handleCreateFolder}>
         Нова папка
       </button>

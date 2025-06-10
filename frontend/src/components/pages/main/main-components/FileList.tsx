@@ -85,7 +85,9 @@ const FileList: React.FC<Props> = ({
       </div>
 
       <div className="file-labels">
-        <h3>Име</h3>
+        <div className="first-two-cols" style={{ gridColumn: "1 / span 2" }}>
+          <h3>Име</h3>
+        </div>
         <h3>Собственик</h3>
         <h3>Променено</h3>
       </div>

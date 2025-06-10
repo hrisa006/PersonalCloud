@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import "./SearchForm.css";
 import { useFileSystem } from "../../../../contexts/FileSystemContext.tsx";
 import { message } from "antd";
+import { IoSearch } from "react-icons/io5";
 
 const SearchBar = () => {
   const [query, setQuery] = useState("");
@@ -49,13 +50,12 @@ const SearchBar = () => {
   return (
     <div className="search-container">
       <form className="input-wrapper">
-        <span id="search-icon">🔍</span>
+        <IoSearch style={{color: "var(--accent-color"}}/>
         <input
           type="text"
           placeholder="Search for files..."
           value={query}
           onChange={handleChange}
-          style={{color: "var(--color-accent)"}}
         />
       </form>
     </div>
