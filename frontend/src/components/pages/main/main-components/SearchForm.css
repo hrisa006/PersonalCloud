@@ -1,23 +1,13 @@
-.search-container {
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 20px;
-}
-
 .input-wrapper {
   display: flex;
   align-items: center;
+  gap: 10px;
   background: rgba(255, 255, 255, 0.15);
+  color: var(--color-accent);
+  border: 3px solid var(--color-accent);
   border-radius: 8px;
-  padding: 10px 15px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  padding: 0 15px;
   margin-bottom: 20px;
-  backdrop-filter: blur(5px);
-  transition: transform 0.2s;
-}
-
-.input-wrapper:hover {
-  transform: translateY(-2px);
 }
 
 #search-icon {
@@ -34,12 +24,15 @@ input {
   background: transparent;
   padding: 8px 0;
   font-size: 16px;
-  color: black;
-  caret-color: #fff;
+  color: var(--color-accent);
 }
 
 input::placeholder {
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--color-accent);
+}
+
+input:focus::placeholder {
+  opacity: 0;
 }
 
 .search-button {
@@ -82,7 +75,7 @@ input::placeholder {
   padding: 15px;
   border-radius: 8px;
   background-color: rgba(255, 255, 255, 0.1);
-  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -92,7 +85,7 @@ input::placeholder {
 
 .file-card:hover {
   transform: translateY(-3px);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
 .file-icon {
